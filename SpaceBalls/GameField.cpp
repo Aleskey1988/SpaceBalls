@@ -5,7 +5,7 @@ GameField::GameField(QWidget* parent)
 {
     ui.setupUi(this);
 
-    qsrand(2);
+    qsrand(0);
     // allocate game field data
     balls.resize(fieldSize.width());
     for (int i = 0; i < fieldSize.width(); ++i)
