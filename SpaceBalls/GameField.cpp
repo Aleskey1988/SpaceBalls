@@ -167,7 +167,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
     // for debug purposes
     else if (e->button() == Qt::RightButton)
     {
-        balls[x][y].SetType(Ball::Bonus4);
+        balls[x][y].SetType(Ball::Bonus5);
         removeBalls(getLineShapes(getShapes()));
     }
 }
@@ -193,50 +193,38 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
     }
     else if (balls[x][y].GetType() == Ball::Bonus5)
     {
-        shape << QPoint(x, y);
-        if (x > 0)
-            shape << QPoint(x - 1, y);
-        if (x < fieldSize.width() - 1)
-            shape << QPoint(x + 1, y);
-        if (y > 0)
-            shape << QPoint(x, y - 1);
-        if (y < fieldSize.height() - 1)
-            shape << QPoint(x, y + 1);
+        for (int i = x - 1; i <= x + 1; i++)
+        {
+            for (int j = y - 1; j <= y + 1; j++)
+            {
+                if (i >= 0 && i < fieldSize.width() && j >= 0 && j < fieldSize.height())
+                    shape << QPoint(i, j);
+            }
+        }
+        for (int i = x - 1; i <= x + 1; i++)
+        {
+            if (i >= 0 && i < fieldSize.width())
+            {
+                if (y - 2 >= 0)
+                    shape << QPoint(i, y - 2);
+                if (y < fieldSize.height() - 2)
+                    shape << QPoint(i, y + 2);
+            }
+        }
+        for (int j = y - 1; j <= y + 1; j++)
+        {
+            if (j >= 0 && j < fieldSize.height())
+            {
+                if (x - 2 >= 0)
+                    shape << QPoint(x - 2, j);
+                if (x < fieldSize.width() - 2)
+                    shape << QPoint(x + 2, j);
+            }
+        }
+    }
+    else if (balls[x][y].GetType() == Ball::Bonus6)
+    {
 
-        if (x > 1)
-            shape << QPoint(x - 2, y);
-        if (x < fieldSize.width() - 2)
-            shape << QPoint(x + 2, y);
-        if (y > 1)
-            shape << QPoint(x, y - 2);
-        if (y < fieldSize.height() - 2)
-            shape << QPoint(x, y + 2);
-
-        if (x > 0 && y > 0)
-            shape << QPoint(x - 1, y - 1);
-        if (x < fieldSize.width() - 1 && y < fieldSize.height() - 1)
-            shape << QPoint(x + 1, y + 1);
-        if (x > 0 && y < fieldSize.height() - 1)
-            shape << QPoint(x - 1, y + 1);
-        if (x < fieldSize.width() - 1 && y > 0)
-            shape << QPoint(x + 1, y - 1);
-
-        if (x > 0 && y > 1)
-            shape << QPoint(x - 1, y - 2);
-        if (x > 1 && y > 0)
-            shape << QPoint(x - 2, y - 1);
-        if (x < fieldSize.width() - 1 && y < fieldSize.height() - 2)
-            shape << QPoint(x + 1, y + 2);
-        if (x < fieldSize.width() - 2 && y < fieldSize.height() - 1)
-            shape << QPoint(x + 2, y + 1);
-        if (x > 1 && y < fieldSize.height() - 1)
-            shape << QPoint(x - 2, y + 1);
-        if (x > 0 && y < fieldSize.height() - 2)
-            shape << QPoint(x - 1, y + 2);
-        if (x < fieldSize.width() - 2 && y > 0)
-            shape << QPoint(x + 2, y - 1);
-        if (x < fieldSize.width() - 1 && y > 1)
-            shape << QPoint(x + 1, y - 2);
     }
     shapes << shape;
     removeBalls(shapes);

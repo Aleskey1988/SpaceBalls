@@ -15,6 +15,8 @@ public:
     GameField(QWidget *parent = Q_NULLPTR);
 
     void onTest();
+    void SetScore(int value) { score = value; }
+    int GetScore() { return score; }
 
 signals:
     void scoreChanged(int value);

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QtWidgets/QMainWindow>
-#include <QPainter>
+#include <QtWidgets>
+#include <QtCore>
 #include "ui_SpaceBalls.h"
 
 class SpaceBalls : public QMainWindow
@@ -10,6 +10,7 @@ class SpaceBalls : public QMainWindow
 
 public:
     SpaceBalls(QWidget *parent = Q_NULLPTR);
+    ~SpaceBalls();
 
 private:
     Ui::SpaceBallsClass ui;
