@@ -1,0 +1,28 @@
+<RCC>
+    <qresource prefix="/caps">
+        <file>Resources/caps/01-saturn.svg</file>
+        <file>Resources/caps/02-jupiter.svg</file>
+        <file>Resources/caps/03-uranus.svg</file>
+        <file>Resources/caps/04-neptune.svg</file>
+        <file>Resources/caps/05-mercury.svg</file>
+        <file>Resources/caps/06-earth.svg</file>
+    </qresource>
+    <qresource prefix="/bonuses">
+        <file>Resources/bonuses/4.svg</file>
+        <file>Resources/bonuses/5.svg</file>
+        <file>Resources/bonuses/6.svg</file>
+        <file>Resources/bonuses/7.svg</file>
+        <file>Resources/bonuses/extra-1.svg</file>
+        <file>Resources/bonuses/extra-2.svg</file>
+        <file>Resources/bonuses/extra-3.svg</file>
+    </qresource>
+    <qresource prefix="/sounds">
+        <file>Resources/sounds/remove-balls.wav</file>
+        <file>Resources/sounds/use-bonus-4.wav</file>
+        <file>Resources/sounds/wrong-move.wav</file>
+    </qresource>
+    <qresource prefix="/misc">
+        <file>Resources/select.svg</file>
+        <file>Resources/space.jpg</file>
+    </qresource>
+</RCC>
