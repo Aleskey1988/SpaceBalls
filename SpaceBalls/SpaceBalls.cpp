@@ -18,9 +18,9 @@ SpaceBalls::SpaceBalls(QWidget *parent)
     {
         QPixmap pixmap(211, 211);
         QPainter p(&pixmap);
-        p.setFont(QFont("Arial", 60));
+        p.setFont(QFont("Arial", 30));
         p.setPen(QPen(Qt::blue));
-        p.drawText(15, 135, QString::number(value));
+        p.drawText(15, 120, QString::number(value));
         ui.labelScore->setPixmap(pixmap);
     });
     emit ui.gameField->scoreChanged(ui.gameField->GetScore());

@@ -17,10 +17,9 @@ public:
         Bonus4,
         Bonus5,
         Bonus6,
-        Bonus7,
-        ExtraBonus1,
-        ExtraBonus2,
-        ExtraBonus3,
+        ExtraBonus1,    // meteors
+        ExtraBonus2,    // rockets
+        ExtraBonus3,    // constellation
     };
 
     Ball();

@@ -51,7 +51,6 @@ GameField::GameField(QWidget* parent)
     textures << SvgToImage(QString(":/bonuses/Resources/bonuses/4.svg"));
     textures << SvgToImage(QString(":/bonuses/Resources/bonuses/5.svg"));
     textures << SvgToImage(QString(":/bonuses/Resources/bonuses/6.svg"));
-    textures << SvgToImage(QString(":/bonuses/Resources/bonuses/7.svg"));
     textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-1.svg"));
     textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2.svg"));
     textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-3.svg"));
@@ -60,6 +59,8 @@ GameField::GameField(QWidget* parent)
     sounds << new QSound(":/sounds/Resources/sounds/remove-balls.wav");
     sounds << new QSound(":/sounds/Resources/sounds/wrong-move.wav");
     sounds << new QSound(":/sounds/Resources/sounds/use-bonus-4.wav");
+    sounds << new QSound(":/sounds/Resources/sounds/use-bonus-5.wav");
+    sounds << new QSound(":/sounds/Resources/sounds/use-bonus-6.wav");
 
     QMediaPlaylist* playlist = new QMediaPlaylist();
     playlist->addMedia(QUrl("Resources/playlist/DST-Aircord.mp3"));
@@ -190,6 +191,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
             shape << QPoint(x, y - 1);
         if (y < fieldSize.height() - 1)
             shape << QPoint(x, y + 1);
+        sounds[Sound::UseBonus4]->play();
     }
     else if (balls[x][y].GetType() == Ball::Bonus5)
     {
@@ -221,10 +223,23 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                     shape << QPoint(x + 2, j);
             }
         }
+        sounds[Sound::UseBonus5]->play();
     }
     else if (balls[x][y].GetType() == Ball::Bonus6)
     {
-
+        // TODO: implement
+    }
+    else if (balls[x][y].GetType() == Ball::ExtraBonus1)
+    {
+        // TODO: implement
+    }
+    else if (balls[x][y].GetType() == Ball::ExtraBonus2)
+    {
+        // TODO: implement
+    }
+    else if (balls[x][y].GetType() == Ball::ExtraBonus3)
+    {
+        // TODO: implement
     }
     shapes << shape;
     removeBalls(shapes);
@@ -420,6 +435,7 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes)
         }
         for (int i = 0; i < bonus4; i++)
         {
+            // TODO: do not replace existing bonuses or empty place
             int x = qrand() % fieldSize.width();
             int y = qrand() % fieldSize.height();
             balls[x][y].SetType(Ball::Bonus4);

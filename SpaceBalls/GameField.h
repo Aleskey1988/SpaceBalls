@@ -39,7 +39,6 @@ private:
         UseBonus4,
         UseBonus5,
         UseBonus6,
-        UseBonus7,
         UseBonusExtra1,
         UseBonusExtra2,
         UseBonusExtra3,

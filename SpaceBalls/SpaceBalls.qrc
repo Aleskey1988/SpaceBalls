@@ -11,7 +11,6 @@
         <file>Resources/bonuses/4.svg</file>
         <file>Resources/bonuses/5.svg</file>
         <file>Resources/bonuses/6.svg</file>
-        <file>Resources/bonuses/7.svg</file>
         <file>Resources/bonuses/extra-1.svg</file>
         <file>Resources/bonuses/extra-2.svg</file>
         <file>Resources/bonuses/extra-3.svg</file>
@@ -19,6 +18,8 @@
     <qresource prefix="/sounds">
         <file>Resources/sounds/remove-balls.wav</file>
         <file>Resources/sounds/use-bonus-4.wav</file>
+        <file>Resources/sounds/use-bonus-5.wav</file>
+        <file>Resources/sounds/use-bonus-6.wav</file>
         <file>Resources/sounds/wrong-move.wav</file>
     </qresource>
     <qresource prefix="/misc">
