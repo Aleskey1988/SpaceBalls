@@ -36,6 +36,13 @@ GameField::GameField(QWidget* parent)
     }
     while (!shapes.isEmpty());
 
+    // debug
+    balls[0][0].SetType(Ball::Cap6);
+    balls[0][1].SetType(Ball::Cap6);
+    balls[1][2].SetType(Ball::Cap6);
+    balls[0][3].SetType(Ball::Cap6);
+    balls[0][4].SetType(Ball::Cap6);
+
     background = QImage(":/misc/Resources/space.jpg").scaled(
         fieldSize.width() * ballSize.width(), fieldSize.height() * ballSize.height());
     // convert SVG rextures to QImage
@@ -76,7 +83,7 @@ GameField::GameField(QWidget* parent)
 
 void GameField::onTest()
 {
-    removeBalls(getLineShapes(getShapes(balls)));
+    getPossibleMoves();
 }
 
 void GameField::mousePressEvent(QMouseEvent* e)
@@ -587,29 +594,37 @@ QImage GameField::SvgToImage(QString& fileName)
 QList<GameField::PossibleMove> GameField::getPossibleMoves()
 {
     QList<PossibleMove> moves;
-
-    QVector<QVector<Ball>> ballsCopy = balls;
     for (int i = 0; i < fieldSize.width() - 1; i++)
     {
         for (int j = 0; j < fieldSize.height(); j++)
         {
+            // create data copy
+            QVector<QVector<Ball>> ballsCopy = balls;
+            // emulate caps exchange
             Ball::Type tmp = ballsCopy[i][j].GetType();
             ballsCopy[i][j].SetType(ballsCopy[i + 1][j].GetType());
             ballsCopy[i + 1][j].SetType(tmp);
+            // get shapes for modificated copy
             QList<QList<QPoint>> shapes = getLineShapes(getShapes(ballsCopy));
             if (!shapes.isEmpty())
             {
+                // sort to set the largest shape to the top
                 qSort(shapes.begin(), shapes.end(), [=]
                 (QList<QPoint>& shapes1, QList<QPoint>& shapes2)
-                    {
-                        return shapes1.size() > shapes2.size();
-                    });
+                {
+                    return shapes1.size() > shapes2.size();
+                });
                 QList<QPoint> maxShape = shapes.first();
                 PossibleMove move(MoveType::Cap, QPoint(i, j), QPoint(i + 1, j), maxShape.size());
                 moves << move;
             }
         }
     }
-
+    // sort to set the best move to the top of moves list
+    qSort(moves.begin(), moves.end(), [=]
+    (PossibleMove& m1, PossibleMove& m2)
+    {
+        return m1.length > m2.length;
+    });
     return moves;
 }
