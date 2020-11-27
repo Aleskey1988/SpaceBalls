@@ -8,6 +8,7 @@ class SpaceBalls : public QMainWindow
 {
     Q_OBJECT
 
+
 public:
     SpaceBalls(QWidget *parent = Q_NULLPTR);
     ~SpaceBalls();
