@@ -26,10 +26,24 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* e);
 
 private:
+    enum MoveType
+    {
+        Cap,
+        Bonus,
+    };
     struct ChainBall
     {
         Ball::Type type;
         bool checked = false;
+    };
+    struct PossibleMove
+    {
+        PossibleMove(MoveType type, QPoint p1, QPoint p2, int length)
+            : type(type), p1(p1), p2(p2), length(length) {}
+        MoveType type;
+        QPoint p1;
+        QPoint p2;
+        int length = 0;
     };
 
     enum Sound
@@ -46,11 +60,12 @@ private:
     
     void updateGameField();
     QList<QPoint> getShape(int x, int y);
-    QList<QList<QPoint>> getShapes();
+    QList<QList<QPoint>> getShapes(QVector<QVector<Ball>>& balls);
     QList<QList<QPoint>> getLineShapes(QList<QList<QPoint>>& shapes);
     void removeBalls(QList<QList<QPoint>>& shapes);
     QList<QPair<QPoint, QPoint>> getDropData();
     QImage SvgToImage(QString& fileName);
+    QList<PossibleMove> getPossibleMoves();
     
     Ui::GameField ui;
     QVector<QVector<Ball>> balls;

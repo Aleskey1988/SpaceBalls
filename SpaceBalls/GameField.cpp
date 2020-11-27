@@ -32,7 +32,7 @@ GameField::GameField(QWidget* parent)
                 balls[i][j].SetType(Ball::Type(qrand() % Ball::GetBallNumber()));
             }
         }
-        shapes = getLineShapes(getShapes());
+        shapes = getLineShapes(getShapes(balls));
     }
     while (!shapes.isEmpty());
 
@@ -76,7 +76,7 @@ GameField::GameField(QWidget* parent)
 
 void GameField::onTest()
 {
-    removeBalls(getLineShapes(getShapes()));
+    removeBalls(getLineShapes(getShapes(balls)));
 }
 
 void GameField::mousePressEvent(QMouseEvent* e)
@@ -119,7 +119,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
                         firstBall->SetType(secondBall->GetType());
                         secondBall->SetType(tmp);
                         // 
-                        QList<QList<QPoint>> shapes = getLineShapes(getShapes());
+                        QList<QList<QPoint>> shapes = getLineShapes(getShapes(balls));
                         if (!shapes.empty())
                             removeBalls(shapes);
                         else
@@ -169,7 +169,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
     else if (e->button() == Qt::RightButton)
     {
         balls[x][y].SetType(Ball::Bonus5);
-        removeBalls(getLineShapes(getShapes()));
+        removeBalls(getLineShapes(getShapes(balls)));
     }
 }
 void GameField::mouseDoubleClickEvent(QMouseEvent* e)
@@ -298,7 +298,7 @@ QList<QPoint> GameField::getShape(int x, int y)
     }
     return points;
 }
-QList<QList<QPoint>> GameField::getShapes()
+QList<QList<QPoint>> GameField::getShapes(QVector<QVector<Ball>>& balls)
 {
     chainBalls.clear();
     chainBalls.resize(fieldSize.width());
@@ -534,7 +534,7 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes)
                                 fillCounter = 0;
                                 fillTimer.stop();
                                 disconnect(&fillTimer, &QTimer::timeout, this, nullptr);
-                                removeBalls(getLineShapes(getShapes()));
+                                removeBalls(getLineShapes(getShapes(balls)));
                             }
                         });
                         fillTimer.start(timerTick);
@@ -545,6 +545,8 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes)
         });
         removeTimer.start(timerTick);
     }
+    QList<PossibleMove> moves = getPossibleMoves();
+    int qw = 0;
 }
 QList<QPair<QPoint, QPoint>> GameField::getDropData()
 {
@@ -581,4 +583,33 @@ QImage GameField::SvgToImage(QString& fileName)
     QPainter p(&image);
     r.render(&p, QRectF(0, 0, ballSize.width() - ballGap * 2, ballSize.height() - ballGap * 2));
     return image;
+}
+QList<GameField::PossibleMove> GameField::getPossibleMoves()
+{
+    QList<PossibleMove> moves;
+
+    QVector<QVector<Ball>> ballsCopy = balls;
+    for (int i = 0; i < fieldSize.width() - 1; i++)
+    {
+        for (int j = 0; j < fieldSize.height(); j++)
+        {
+            Ball::Type tmp = ballsCopy[i][j].GetType();
+            ballsCopy[i][j].SetType(ballsCopy[i + 1][j].GetType());
+            ballsCopy[i + 1][j].SetType(tmp);
+            QList<QList<QPoint>> shapes = getLineShapes(getShapes(ballsCopy));
+            if (!shapes.isEmpty())
+            {
+                qSort(shapes.begin(), shapes.end(), [=]
+                (QList<QPoint>& shapes1, QList<QPoint>& shapes2)
+                    {
+                        return shapes1.size() > shapes2.size();
+                    });
+                QList<QPoint> maxShape = shapes.first();
+                PossibleMove move(MoveType::Cap, QPoint(i, j), QPoint(i + 1, j), maxShape.size());
+                moves << move;
+            }
+        }
+    }
+
+    return moves;
 }
