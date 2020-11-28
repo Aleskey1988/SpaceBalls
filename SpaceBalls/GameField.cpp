@@ -162,12 +162,13 @@ void GameField::mousePressEvent(QMouseEvent* e)
     // for debug purposes
     else if (e->button() == Qt::RightButton)
     {
-        balls[x][y].SetType(Ball::Bonus5);
+        balls[x][y].SetType(Ball::Bonus6);
         removeBalls(getLineShapes(getShapes(balls)));
     }
 }
 void GameField::mouseDoubleClickEvent(QMouseEvent* e)
 {
+    // TODO: fix bug with decreasing score
     QPoint pos = e->pos();
     int x = pos.x() / ballSize.width();
     int y = pos.y() / ballSize.height();
@@ -221,7 +222,34 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
     }
     else if (balls[x][y].GetType() == Ball::Bonus6)
     {
-        // TODO: implement
+        for (int i = x - 2; i <= x + 2; i++)
+        {
+            for (int j = y - 2; j <= y + 2; j++)
+            {
+                if (i >= 0 && i < fieldSize.width() && j >= 0 && j < fieldSize.height())
+                    shape << QPoint(i, j);
+            }
+        }
+        for (int i = x - 2; i <= x + 2; i++)
+        {
+            if (i >= 0 && i < fieldSize.width())
+            {
+                if (y - 3 >= 0)
+                    shape << QPoint(i, y - 3);
+                if (y < fieldSize.height() - 3)
+                    shape << QPoint(i, y + 3);
+            }
+        }
+        for (int j = y - 2; j <= y + 2; j++)
+        {
+            if (j >= 0 && j < fieldSize.height())
+            {
+                if (x - 3 >= 0)
+                    shape << QPoint(x - 3, j);
+                if (x < fieldSize.width() - 2)
+                    shape << QPoint(x + 3, j);
+            }
+        }
     }
     else if (balls[x][y].GetType() == Ball::ExtraBonus1)
     {
