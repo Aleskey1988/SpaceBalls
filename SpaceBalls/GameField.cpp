@@ -15,33 +15,20 @@ GameField::GameField(QWidget* parent)
     {
         for (int j = 0; j < fieldSize.height(); ++j)
         {
+            balls[i][j].SetType(Ball::Type(qrand() % Ball::GetBallNumber()));
             balls[i][j].SetRect(QRect(i * ballSize.width() + ballGap, j * ballSize.height() + ballGap,
                 ballSize.width() - ballGap * 2, ballSize.height() - ballGap * 2));
             balls[i][j].SetPos(QPoint(i, j));
         }
     }
-    // generate field with no moves
-    QList<QList<QPoint>> shapes;
-    do
-    {
-        // fill game field types
-        for (int i = 0; i < fieldSize.width(); ++i)
-        {
-            for (int j = 0; j < fieldSize.height(); ++j)
-            {
-                balls[i][j].SetType(Ball::Type(qrand() % Ball::GetBallNumber()));
-            }
-        }
-        shapes = getLineShapes(getShapes(balls));
-    }
-    while (!shapes.isEmpty());
+    shuffleCaps();
 
     // debug
-    balls[0][0].SetType(Ball::Cap6);
-    balls[0][1].SetType(Ball::Cap6);
-    balls[1][2].SetType(Ball::Cap6);
-    balls[0][3].SetType(Ball::Cap6);
-    balls[0][4].SetType(Ball::Cap6);
+    //balls[0][0].SetType(Ball::Cap6);
+    //balls[0][1].SetType(Ball::Cap6);
+    //balls[1][2].SetType(Ball::Cap6);
+    //balls[0][3].SetType(Ball::Cap6);
+    //balls[0][4].SetType(Ball::Cap6);
 
     background = QImage(":/misc/Resources/space.jpg").scaled(
         fieldSize.width() * ballSize.width(), fieldSize.height() * ballSize.height());
@@ -83,7 +70,7 @@ GameField::GameField(QWidget* parent)
 
 void GameField::onTest()
 {
-    getPossibleMoves();
+    shuffleCaps();
 }
 
 void GameField::mousePressEvent(QMouseEvent* e)
@@ -553,7 +540,11 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes)
         removeTimer.start(timerTick);
     }
     QList<PossibleMove> moves = getPossibleMoves();
-    int qw = 0;
+    // shuffle caps is there are no possible moves
+    if (moves.isEmpty())
+    {
+        shuffleCaps();
+    }
 }
 QList<QPair<QPoint, QPoint>> GameField::getDropData()
 {
@@ -594,6 +585,7 @@ QImage GameField::SvgToImage(QString& fileName)
 QList<GameField::PossibleMove> GameField::getPossibleMoves()
 {
     QList<PossibleMove> moves;
+    // horizontal swaps
     for (int i = 0; i < fieldSize.width() - 1; i++)
     {
         for (int j = 0; j < fieldSize.height(); j++)
@@ -620,6 +612,33 @@ QList<GameField::PossibleMove> GameField::getPossibleMoves()
             }
         }
     }
+    // vertical swaps
+    for (int i = 0; i < fieldSize.width(); i++)
+    {
+        for (int j = 0; j < fieldSize.height() - 1; j++)
+        {
+            // create data copy
+            QVector<QVector<Ball>> ballsCopy = balls;
+            // emulate caps exchange
+            Ball::Type tmp = ballsCopy[i][j].GetType();
+            ballsCopy[i][j].SetType(ballsCopy[i][j + 1].GetType());
+            ballsCopy[i][j + 1].SetType(tmp);
+            // get shapes for modificated copy
+            QList<QList<QPoint>> shapes = getLineShapes(getShapes(ballsCopy));
+            if (!shapes.isEmpty())
+            {
+                // sort to set the largest shape to the top
+                qSort(shapes.begin(), shapes.end(), [=]
+                (QList<QPoint>& shapes1, QList<QPoint>& shapes2)
+                {
+                    return shapes1.size() > shapes2.size();
+                });
+                QList<QPoint> maxShape = shapes.first();
+                PossibleMove move(MoveType::Cap, QPoint(i, j), QPoint(i, j + 1), maxShape.size());
+                moves << move;
+            }
+        }
+    }
     // sort to set the best move to the top of moves list
     qSort(moves.begin(), moves.end(), [=]
     (PossibleMove& m1, PossibleMove& m2)
@@ -627,4 +646,49 @@ QList<GameField::PossibleMove> GameField::getPossibleMoves()
         return m1.length > m2.length;
     });
     return moves;
+}
+void GameField::shuffleCaps()
+{
+    QList<QPoint> points;
+    // fill points
+    for (int i = 0; i < fieldSize.width(); i++)
+    {
+        for (int j = 0; j < fieldSize.height(); j++)
+        {
+            points << QPoint(i, j);
+        }
+    }
+    do
+    {
+        // shuffle points
+        for (int i = 0; i < std::pow(fieldSize.width() * fieldSize.height(), 2); i++)
+        {
+            int x = qrand() % points.size();
+            int y = qrand() % points.size();
+            qSwap(points[x], points[y]);
+        }
+        // apply shuffled points for game field
+        QVector<QVector<Ball::Type>> types;
+        types.resize(fieldSize.width());
+        for (int i = 0; i < fieldSize.width(); ++i)
+            types[i].resize(fieldSize.height());
+        for (int i = 0; i < fieldSize.width(); i++)
+        {
+            for (int j = 0; j < fieldSize.height(); j++)
+            {
+                types[i][j] = balls[i][j].GetType();
+            }
+        }
+        int counter = 0;
+        for (int i = 0; i < fieldSize.width(); i++)
+        {
+            for (int j = 0; j < fieldSize.height(); j++)
+            {
+                QPoint p = points[counter];
+                balls[i][j].SetType(types[p.x()][p.y()]);
+                counter++;
+            }
+        }
+    }
+    while (!getLineShapes(getShapes(balls)).isEmpty() || getPossibleMoves().isEmpty());
 }

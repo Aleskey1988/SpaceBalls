@@ -66,6 +66,7 @@ private:
     QList<QPair<QPoint, QPoint>> getDropData();
     QImage SvgToImage(QString& fileName);
     QList<PossibleMove> getPossibleMoves();
+    void shuffleCaps();
     
     Ui::GameField ui;
     QVector<QVector<Ball>> balls;
