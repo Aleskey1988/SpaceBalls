@@ -162,7 +162,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
     // for debug purposes
     else if (e->button() == Qt::RightButton)
     {
-        balls[x][y].SetType(Ball::Bonus6);
+        balls[x][y].SetType(Ball::ExtraBonus2);
         removeBalls(getLineShapes(getShapes(balls)));
     }
 }
@@ -257,7 +257,12 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
     }
     else if (balls[x][y].GetType() == Ball::ExtraBonus2)
     {
-        // TODO: implement
+        for (int i = 0; i < fieldSize.width(); i++)
+            shape << QPoint(i, y);
+        for (int j = 0; j < y; j++)
+            shape << QPoint(x, j);
+        for (int j = y + 1; j < fieldSize.height(); j++)
+            shape << QPoint(x, j);
     }
     else if (balls[x][y].GetType() == Ball::ExtraBonus3)
     {
