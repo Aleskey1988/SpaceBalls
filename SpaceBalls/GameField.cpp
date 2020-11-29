@@ -454,24 +454,34 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes)
         }
         emit scoreChanged(score);
         // add bonuses
-        int bonus4 = 0;
+        QVector<int> bonuses(3);
         for (int i = 0; i < shapes.size(); i++)
         {
             if (shapes[i].size() == 4)
-                bonus4++;
+                bonuses[0]++;
+            else if (shapes[i].size() == 5)
+                bonuses[1]++;
+            else if (shapes[i].size() > 5)
+                bonuses[2]++;
         }
-        for (int i = 0; i < bonus4; i++)
+        for (int i = 0; i < bonuses.size(); i++)
         {
-            // TODO: do not replace existing bonuses or empty place
-            int x = 0;
-            int y = 0;
-            do
+            for (int j = 0; j < bonuses[i]; j++)
             {
-                int x = qrand() % fieldSize.width();
-                int y = qrand() % fieldSize.height();
+                int x = 0;
+                int y = 0;
+                do
+                {
+                    int x = qrand() % fieldSize.width();
+                    int y = qrand() % fieldSize.height();
+                    if (balls[x][y].IsBall())
+                    {
+                        balls[x][y].SetType(Ball::Type(Ball::Bonus4 + i));
+                        break;
+                    }
+                }
+                while (true);
             }
-            while (!balls[x][y].IsBall());
-            balls[x][y].SetType(Ball::Bonus4);
         }
         connect(&removeTimer, &QTimer::timeout, this, [=]
         {
