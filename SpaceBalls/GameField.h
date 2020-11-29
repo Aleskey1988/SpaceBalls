@@ -95,6 +95,12 @@ private:
     QList<QSound*> sounds;
     QImage selectedImage;
 
+    bool isExtraBonus2Pos = false;
+    bool isExtraBonus2Lines = false;
+    QList<QPoint> extraBonus2Pos;
+    QList<QLine> extraBonus2Lines;
+    QPen extraBonus2Pen;
+
     int timerTick = 5;
     int score = 0;
 };
