@@ -62,7 +62,7 @@ GameField::GameField(QWidget* parent)
     playlist->shuffle();
     QMediaPlayer* music = new QMediaPlayer();
     music->setPlaylist(playlist);
-    //music->play();
+    music->play();
 
     connect(&timer, &QTimer::timeout, this, &GameField::updateGameField);
     timer.start(timerTick);
@@ -463,8 +463,14 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes)
         for (int i = 0; i < bonus4; i++)
         {
             // TODO: do not replace existing bonuses or empty place
-            int x = qrand() % fieldSize.width();
-            int y = qrand() % fieldSize.height();
+            int x = 0;
+            int y = 0;
+            do
+            {
+                int x = qrand() % fieldSize.width();
+                int y = qrand() % fieldSize.height();
+            }
+            while (!balls[x][y].IsBall());
             balls[x][y].SetType(Ball::Bonus4);
         }
         connect(&removeTimer, &QTimer::timeout, this, [=]
