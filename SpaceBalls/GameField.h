@@ -92,6 +92,7 @@ private:
 
     QImage background;
     QList<QImage> textures;
+    QList<QImage> extraBonus2Textures;
     QList<QSound*> sounds;
     QImage selectedImage;
 

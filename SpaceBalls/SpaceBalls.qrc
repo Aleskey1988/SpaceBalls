@@ -14,6 +14,10 @@
         <file>Resources/bonuses/extra-1.svg</file>
         <file>Resources/bonuses/extra-2.svg</file>
         <file>Resources/bonuses/extra-3.svg</file>
+        <file>Resources/bonuses/extra-2-bottom.svg</file>
+        <file>Resources/bonuses/extra-2-left.svg</file>
+        <file>Resources/bonuses/extra-2-right.svg</file>
+        <file>Resources/bonuses/extra-2-top.svg</file>
     </qresource>
     <qresource prefix="/sounds">
         <file>Resources/sounds/remove-balls.wav</file>

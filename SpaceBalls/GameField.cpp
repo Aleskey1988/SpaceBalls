@@ -48,6 +48,11 @@ GameField::GameField(QWidget* parent)
     textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-1.svg"));
     textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2.svg"));
     textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-3.svg"));
+    extraBonus2Textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2-left.svg"));
+    extraBonus2Textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2-right.svg"));
+    extraBonus2Textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2-top.svg"));
+    extraBonus2Textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2-bottom.svg"));
+
     selectedImage = SvgToImage(QString(":/misc/Resources/select.svg"));
     // load sounds
     sounds << new QSound(":/sounds/Resources/sounds/remove-balls.wav");
@@ -269,20 +274,49 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
         for (int i = 0; i < 4; i++)
             extraBonus2Pos << QPoint(x * ballSize.width(), y * ballSize.height());
 
+        for (int i = 0; i < shapes.size(); i++)
+            extraBonus2Lines << QLine(
+                (x + 0.5) * ballSize.width(),
+                (y + 0.5) * ballSize.width(),
+                (x + 0.5) * ballSize.height(),
+                (y + 0.5) * ballSize.height());
+
         isExtraBonus2Pos = true;
         int maxSize = qMax(shapes[0].size(), qMax(shapes[1].size(), qMax(shapes[2].size(), shapes[3].size())));
         int step = 2;
+        extraBonus2Pen = QPen(QColor(255, 128, 0, 128), ballSize.width() / 10);
+        isExtraBonus2Lines = true;
 
         connect(&removeTimer, &QTimer::timeout, this, [=]
         {
-            if (extraBonus2Pos[0].x() > 0)
-                extraBonus2Pos[0] += QPoint(-step, 0);
-            if (extraBonus2Pos[1].x() < (fieldSize.width() - 1) * ballSize.width())
-                extraBonus2Pos[1] += QPoint(step, 0);
-            if (extraBonus2Pos[2].y() > 0)
-                extraBonus2Pos[2] += QPoint(0, -step);
-            if (extraBonus2Pos[3].y() < (fieldSize.height() - 1) * ballSize.height())
-                extraBonus2Pos[3] += QPoint(0, step);
+                if (extraBonus2Pos[0].x() > 0)
+                {
+                    extraBonus2Pos[0] += QPoint(-step, 0);
+                    extraBonus2Lines[0].setP2(QPoint(
+                        extraBonus2Lines[0].p2().x() - step,
+                        extraBonus2Lines[0].p2().y()));
+                }
+                if (extraBonus2Pos[1].x() < (fieldSize.width() - 1) * ballSize.width())
+                {
+                    extraBonus2Pos[1] += QPoint(step, 0);
+                    extraBonus2Lines[1].setP2(QPoint(
+                        extraBonus2Lines[1].p2().x() + step,
+                        extraBonus2Lines[1].p2().y()));
+                }
+                if (extraBonus2Pos[2].y() > 0)
+                {
+                    extraBonus2Pos[2] += QPoint(0, -step);
+                    extraBonus2Lines[2].setP2(QPoint(
+                        extraBonus2Lines[2].p2().x(),
+                        extraBonus2Lines[2].p2().y() - step));
+                }
+                if (extraBonus2Pos[3].y() < (fieldSize.height() - 1) * ballSize.height())
+                {
+                    extraBonus2Pos[3] += QPoint(0, step);
+                    extraBonus2Lines[3].setP2(QPoint(
+                        extraBonus2Lines[3].p2().x(),
+                        extraBonus2Lines[3].p2().y() + step));
+                }
             removeCounter++;
             if (removeCounter == maxSize * ballSize.width() / step)
             {
@@ -290,12 +324,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                 disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
                 removeCounter = 0;
 
-                isExtraBonus2Lines = true;
-
-                for (int i = 0; i < shapes.size(); i++)
-                    extraBonus2Lines << QLine(QPoint((x + 0.5) * ballSize.width(), (y + 0.5) * ballSize.width()),
-                        QPoint((shapes[i].last().x() + 0.5) * ballSize.width(), (shapes[i].last().y() + 0.5) * ballSize.height()));
-                extraBonus2Pen = QPen(Qt::blue, 1);
+                extraBonus2Pen = QPen(QColor(255, 128, 0), 1, Qt::PenStyle::SolidLine, Qt::RoundCap);
                 connect(&removeTimer, &QTimer::timeout, this, [=]
                 {
                     extraBonus2Pen.setWidth(extraBonus2Pen.width() + 1);
@@ -352,8 +381,8 @@ void GameField::updateGameField()
     // draw extra bonus 2
     if (isExtraBonus2Pos)
     {
-        for (int i = 0; i < extraBonus2Pos.size(); i++)
-            p.drawImage(extraBonus2Pos[i], textures[Ball::ExtraBonus2]);
+        for (int i = 0; i < extraBonus2Textures.size(); i++)
+            p.drawImage(extraBonus2Pos[i], extraBonus2Textures[i]);
     }
     if (isExtraBonus2Lines)
     {
