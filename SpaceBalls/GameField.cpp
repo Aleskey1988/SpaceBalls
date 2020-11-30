@@ -120,7 +120,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
                         // 
                         QList<QList<QPoint>> shapes = getLineShapes(getShapes(balls));
                         if (!shapes.empty())
-                            removeBalls(shapes);
+                            removeBalls(shapes, RemoveType::Cap);
                         else
                         {
                             sounds[Sound::WrongMove]->play();
@@ -168,7 +168,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
     else if (e->button() == Qt::RightButton)
     {
         balls[x][y].SetType(Ball::ExtraBonus2);
-        removeBalls(getLineShapes(getShapes(balls)));
+        //removeBalls(getLineShapes(getShapes(balls)), );
     }
 }
 void GameField::mouseDoubleClickEvent(QMouseEvent* e)
@@ -348,7 +348,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                         for (int i = 0; i < shapes.size(); i++)
                             removeShapes << shapes[i];
                         removeShapes << QList<QPoint>{QPoint(x, y)};
-                        removeBalls(removeShapes);
+                        removeBalls(removeShapes, RemoveType::Bonus);
                     }
                 });
                 removeTimer.start(timerTick);
@@ -544,7 +544,7 @@ QList<QList<QPoint>> GameField::getLineShapes(QList<QList<QPoint>>& shapes)
 
     return lineShapes;
 }
-void GameField::removeBalls(QList<QList<QPoint>>& shapes)
+void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
 {
     if (!shapes.isEmpty())
     {
@@ -559,33 +559,35 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes)
         }
         emit scoreChanged(score);
         // add bonuses
-        QVector<int> bonuses(3);
-        for (int i = 0; i < shapes.size(); i++)
+        if (removeType == RemoveType::Cap)
         {
-            if (shapes[i].size() == 4)
-                bonuses[0]++;
-            else if (shapes[i].size() == 5)
-                bonuses[1]++;
-            else if (shapes[i].size() > 5)
-                bonuses[2]++;
-        }
-        for (int i = 0; i < bonuses.size(); i++)
-        {
-            for (int j = 0; j < bonuses[i]; j++)
+            QVector<int> bonuses(3);
+            for (int i = 0; i < shapes.size(); i++)
             {
-                int x = 0;
-                int y = 0;
-                do
+                if (shapes[i].size() == 4)
+                    bonuses[0]++;
+                else if (shapes[i].size() == 5)
+                    bonuses[1]++;
+                else if (shapes[i].size() > 5)
+                    bonuses[2]++;
+            }
+            for (int i = 0; i < bonuses.size(); i++)
+            {
+                for (int j = 0; j < bonuses[i]; j++)
                 {
-                    int x = qrand() % fieldSize.width();
-                    int y = qrand() % fieldSize.height();
-                    if (balls[x][y].IsBall())
+                    int x = 0;
+                    int y = 0;
+                    do
                     {
-                        balls[x][y].SetType(Ball::Type(Ball::Bonus4 + i));
-                        break;
-                    }
+                        int x = qrand() % fieldSize.width();
+                        int y = qrand() % fieldSize.height();
+                        if (balls[x][y].IsBall())
+                        {
+                            balls[x][y].SetType(Ball::Type(Ball::Bonus4 + i));
+                            break;
+                        }
+                    } while (true);
                 }
-                while (true);
             }
         }
         connect(&removeTimer, &QTimer::timeout, this, [=]
@@ -682,7 +684,7 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes)
                                 fillCounter = 0;
                                 fillTimer.stop();
                                 disconnect(&fillTimer, &QTimer::timeout, this, nullptr);
-                                removeBalls(getLineShapes(getShapes(balls)));
+                                removeBalls(getLineShapes(getShapes(balls)), RemoveType::Cap);
                             }
                         });
                         fillTimer.start(timerTick);

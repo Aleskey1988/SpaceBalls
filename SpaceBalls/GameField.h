@@ -45,7 +45,6 @@ private:
         QPoint p2;
         int length = 0;
     };
-
     enum Sound
     {
         RemoveBalls,
@@ -57,12 +56,17 @@ private:
         UseBonusExtra2,
         UseBonusExtra3,
     };
+    enum class RemoveType
+    {
+        Cap,
+        Bonus,
+    };
     
     void updateGameField();
     QList<QPoint> getShape(int x, int y);
     QList<QList<QPoint>> getShapes(QVector<QVector<Ball>>& balls);
     QList<QList<QPoint>> getLineShapes(QList<QList<QPoint>>& shapes);
-    void removeBalls(QList<QList<QPoint>>& shapes);
+    void removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType);
     QList<QPair<QPoint, QPoint>> getDropData();
     QImage SvgToImage(QString& fileName);
     QList<PossibleMove> getPossibleMoves();
