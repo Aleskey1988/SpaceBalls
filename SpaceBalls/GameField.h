@@ -101,6 +101,7 @@ private:
     QList<QPoint> extraBonus2Pos;
     QList<QLine> extraBonus2Lines;
     QPen extraBonus2Pen;
+    double extraBonus2Transparent = 0.0;
 
     int timerTick = 5;
     int score = 0;

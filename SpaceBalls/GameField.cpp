@@ -284,11 +284,12 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
         isExtraBonus2Pos = true;
         int maxSize = qMax(shapes[0].size(), qMax(shapes[1].size(), qMax(shapes[2].size(), shapes[3].size())));
         int step = 2;
-        extraBonus2Pen = QPen(QColor(255, 128, 0, 128), ballSize.width() / 10);
         isExtraBonus2Lines = true;
 
         connect(&removeTimer, &QTimer::timeout, this, [=]
         {
+                extraBonus2Transparent = (int)(192.0 * removeCounter / (double)(maxSize * ballSize.width() / step));
+                extraBonus2Pen = QPen(QColor(255, 128, 0, extraBonus2Transparent), ballSize.width() / 10);
                 if (extraBonus2Pos[0].x() > 0)
                 {
                     extraBonus2Pos[0] += QPoint(-step, 0);
@@ -317,6 +318,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                         extraBonus2Lines[3].p2().x(),
                         extraBonus2Lines[3].p2().y() + step));
                 }
+
             removeCounter++;
             if (removeCounter == maxSize * ballSize.width() / step)
             {
@@ -324,9 +326,11 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                 disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
                 removeCounter = 0;
 
-                extraBonus2Pen = QPen(QColor(255, 128, 0), 1, Qt::PenStyle::SolidLine, Qt::RoundCap);
+                extraBonus2Pen.setCapStyle(Qt::RoundCap);
                 connect(&removeTimer, &QTimer::timeout, this, [=]
                 {
+                    extraBonus2Transparent = (int)(192.0 + 63.0 * removeCounter / (double)(ballSize.width() / 2));
+                    extraBonus2Pen.setColor(QColor(255, 128, 0, extraBonus2Transparent));
                     extraBonus2Pen.setWidth(extraBonus2Pen.width() + 1);
                     removeCounter++;
                     if (removeCounter == ballSize.width() / 2)
