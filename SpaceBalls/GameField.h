@@ -109,4 +109,6 @@ private:
 
     int timerTick = 5;
     int score = 0;
+
+    bool isUseMouse = true;
 };
