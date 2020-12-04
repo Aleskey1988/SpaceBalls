@@ -39,7 +39,9 @@ private:
     struct PossibleMove
     {
         PossibleMove(MoveType type, QPoint p1, QPoint p2, int length)
-            : type(type), p1(p1), p2(p2), length(length) {}
+            : type(type), p1(p1), p2(p2), length(length)
+        {
+        }
         MoveType type;
         QPoint p1;
         QPoint p2;
@@ -61,7 +63,7 @@ private:
         Cap,
         Bonus,
     };
-    
+
     void updateGameField();
     QList<QPoint> getShape(int x, int y);
     QList<QList<QPoint>> getShapes(QVector<QVector<Ball>>& balls);
@@ -71,7 +73,7 @@ private:
     QImage SvgToImage(QString& fileName);
     QList<PossibleMove> getPossibleMoves();
     void shuffleCaps();
-    
+
     Ui::GameField ui;
     QVector<QVector<Ball>> balls;
     QVector<QVector<ChainBall>> chainBalls;
