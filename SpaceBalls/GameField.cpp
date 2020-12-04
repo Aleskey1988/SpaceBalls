@@ -171,7 +171,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
 		// for debug purposes
 		else if (e->button() == Qt::RightButton)
 		{
-			balls[x][y].SetType(Ball::Bonus4);
+			balls[x][y].SetType(Ball::Bonus5);
 			//removeBalls(getLineShapes(getShapes(balls)), );
 		}
 	}
@@ -254,6 +254,27 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
 				}
 			}
 			sounds[Sound::UseBonus5]->play();
+
+			bonus5Rect = QRect(QPoint(x * ballSize.width(),
+				y * ballSize.height()),	ballSize);
+			isBonus5 = true;
+			connect(&removeTimer, &QTimer::timeout, this, [=]
+				{
+					bonus5Rect = bonus5Rect.adjusted(-1, -1, 1, 1);
+					removeCounter++;
+					if (removeCounter == ballSize.width() * 2)
+					{
+						removeTimer.stop();
+						disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+						removeCounter = 0;
+
+						isBonus5 = false;
+						QList<QList<QPoint>> shapes;
+						shapes << shape;
+						removeBalls(shapes, RemoveType::Bonus);
+					}
+				});
+			removeTimer.start(timerTick);
 		}
 		else if (balls[x][y].GetType() == Ball::Bonus6)
 		{
@@ -423,6 +444,11 @@ void GameField::updateGameField()
 	{
 		p.setPen(bonus4Pen);
 		p.drawEllipse(bonus4Rect);
+	}
+	// draw bonus 5
+	if (isBonus5)
+	{
+		p.drawImage(bonus5Rect, textures[Ball::Bonus5], textures[Ball::Bonus5].rect());
 	}
 	// draw extra bonus 2
 	if (isExtraBonus2Pos)

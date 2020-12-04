@@ -104,6 +104,10 @@ private:
     QRect bonus4Rect;
     QPen bonus4Pen;
 
+    bool isBonus5 = false;
+    QRect bonus5Rect;
+    double bonus5Transparent = 0.0;
+
     bool isExtraBonus2Pos = false;
     bool isExtraBonus2Lines = false;
     QList<QPoint> extraBonus2Pos;
