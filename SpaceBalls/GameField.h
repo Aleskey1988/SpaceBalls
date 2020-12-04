@@ -100,6 +100,10 @@ private:
     QList<QSound*> sounds;
     QImage selectedImage;
 
+    bool isBonus4 = false;
+    QRect bonus4Rect;
+    QPen bonus4Pen;
+
     bool isExtraBonus2Pos = false;
     bool isExtraBonus2Lines = false;
     QList<QPoint> extraBonus2Pos;

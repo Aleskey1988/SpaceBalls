@@ -171,7 +171,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
 		// for debug purposes
 		else if (e->button() == Qt::RightButton)
 		{
-			balls[x][y].SetType(Ball::ExtraBonus2);
+			balls[x][y].SetType(Ball::Bonus4);
 			//removeBalls(getLineShapes(getShapes(balls)), );
 		}
 	}
@@ -180,7 +180,6 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
 {
 	if (isUseMouse)
 	{
-		// TODO: fix bug with decreasing score
 		QPoint pos = e->pos();
 		int x = pos.x() / ballSize.width();
 		int y = pos.y() / ballSize.height();
@@ -199,6 +198,29 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
 			if (y < fieldSize.height() - 1)
 				shape << QPoint(x, y + 1);
 			sounds[Sound::UseBonus4]->play();
+
+			bonus4Pen = QPen(QColor(255, 192, 0), 4);
+			bonus4Rect = QRect(QPoint(x * ballSize.width() + ballSize.width() / 2,
+				y * ballSize.height() + ballSize.height() / 2),
+				QSize(0, 0));
+			isBonus4 = true;
+			connect(&removeTimer, &QTimer::timeout, this, [=]
+				{
+					bonus4Rect = bonus4Rect.adjusted(-1, -1, 1, 1);
+					removeCounter++;
+					if (removeCounter == ballSize.width() * 1.3)
+					{
+						removeTimer.stop();
+						disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+						removeCounter = 0;
+
+						isBonus4 = false;
+						QList<QList<QPoint>> shapes;
+						shapes << shape;
+						removeBalls(shapes, RemoveType::Bonus);
+					}
+				});
+			removeTimer.start(timerTick);
 		}
 		else if (balls[x][y].GetType() == Ball::Bonus5)
 		{
@@ -395,6 +417,12 @@ void GameField::updateGameField()
 			if (balls[i][j].GetSelected())
 				p.drawImage(balls[i][j].GetRect().topLeft(), selectedImage.scaled(balls[i][j].GetRect().size()));
 		}
+	}
+	// draw bonus 4
+	if (isBonus4)
+	{
+		p.setPen(bonus4Pen);
+		p.drawEllipse(bonus4Rect);
 	}
 	// draw extra bonus 2
 	if (isExtraBonus2Pos)
