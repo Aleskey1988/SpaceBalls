@@ -12,7 +12,19 @@ SpaceBalls::SpaceBalls(QWidget *parent)
 
     connect(ui.buttonTest, &QPushButton::clicked, this, [=]
     {
-        ui.gameField->onTest();
+        ui.gameField->Test();
+    });
+    connect(ui.buttonCallExtraBonus1, &QPushButton::clicked, this, [=]
+    {
+        ui.gameField->CallExtraBonus1();
+    });
+    connect(ui.buttonCallExtraBonus2, &QPushButton::clicked, this, [=]
+    {
+        ui.gameField->CallExtraBonus2();
+    });
+    connect(ui.buttonCallExtraBonus3, &QPushButton::clicked, this, [=]
+    {
+        ui.gameField->CallExtraBonus3();
     });
     connect(ui.gameField, &GameField::scoreChanged, this, [=] (int value)
     {

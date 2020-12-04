@@ -14,7 +14,10 @@ class GameField : public QLabel
 public:
     GameField(QWidget *parent = Q_NULLPTR);
 
-    void onTest();
+    void Test();
+    void CallExtraBonus1();
+    void CallExtraBonus2();
+    void CallExtraBonus3();
     void SetScore(int value) { score = value; }
     int GetScore() { return score; }
 
@@ -73,6 +76,7 @@ private:
     QImage SvgToImage(QString& fileName);
     QList<PossibleMove> getPossibleMoves();
     void shuffleCaps();
+    QPoint getRandomCapPos();
 
     Ui::GameField ui;
     QVector<QVector<Ball>> balls;
@@ -116,6 +120,14 @@ private:
     QList<QLine> extraBonus2Lines;
     QPen extraBonus2Pen;
     double extraBonus2Transparent = 0.0;
+
+    struct ExtraBonus3
+    {
+        bool isActive = false;
+        QList<QLine> lines;
+        QPen pen;
+        double transparent = 0.0;
+    } eb3;
 
     int timerTick = 5;
     int score = 0;
