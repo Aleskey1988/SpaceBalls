@@ -83,7 +83,7 @@ private:
     QVector<QVector<ChainBall>> chainBalls;
 
     QSize fieldSize = QSize(12, 8);
-    QSize ballSize = QSize(70, 70);
+    int ballSize = 70;
     int ballGap = 5;
     bool isFirstSelected = false;
     Ball* firstBall = nullptr;
