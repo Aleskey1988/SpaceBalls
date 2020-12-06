@@ -164,11 +164,11 @@ void GameField::mousePressEvent(QMouseEvent* e)
                                             Ball::Type tmp = firstBall->GetType();
                                             firstBall->SetType(secondBall->GetType());
                                             secondBall->SetType(tmp);
+                                            isUseMouse = true;
                                         }
                                     });
                                     ballsSwapTimer.start(timerTick / 2);
                                 }
-                                isUseMouse = true;
                             }
                         }
                     });
@@ -928,13 +928,16 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
         });
         removeTimer.start(timerTick);
     }
-    QList<PossibleMove> moves = getPossibleMoves();
-    // shuffle caps is there are no possible moves
-    if (moves.isEmpty())
+    else
     {
-        shuffleCaps();
+        QList<PossibleMove> moves = getPossibleMoves();
+        // shuffle caps is there are no possible moves
+        if (moves.isEmpty())
+        {
+            shuffleCaps();
+        }
+        isUseMouse = true;
     }
-    isUseMouse = true;
 }
 QList<QPair<QPoint, QPoint>> GameField::getDropData()
 {
