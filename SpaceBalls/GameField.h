@@ -123,9 +123,12 @@ private:
 
     struct ExtraBonus3
     {
-        bool isActive = false;
+        bool isStage1 = false;
+        bool isStage2 = false;
         QList<QLine> lines;
+        QPainterPath path;
         QPen pen;
+        QBrush brush;
         double transparent = 0.0;
     } eb3;
 

@@ -186,7 +186,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
         // for debug purposes
         else if (e->button() == Qt::RightButton)
         {
-            balls[x][y].SetType(Ball::ExtraBonus1);
+            balls[x][y].SetType(Ball::ExtraBonus3);
             //removeBalls(getLineShapes(getShapes(balls)), );
         }
     }
@@ -427,7 +427,6 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
             });
             removeTimer.start(timerTick);
         }
-
         else if (balls[x][y].GetType() == Ball::ExtraBonus3)
         {
             isUseMouse = false;
@@ -469,6 +468,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
             QPair<Ball::Type, int> max = pairs[0];
             // get points of type with maximum number
             QList<QPoint> points;
+            points << QPoint(x, y);
             for (int i = 0; i < fieldSize.width(); ++i)
             {
                 for (int j = 0; j < fieldSize.height(); ++j)
@@ -477,47 +477,83 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                         points << QPoint(i, j);
                 }
             }
-            // form initial lines
-            for (int i = 0; i < points.size() - 1; i++)
+            // shuffle points
+            for (int i = 0; i < std::pow(points.size(), 2); i++)
+            {
+                int x = qrand() % points.size();
+                int y = qrand() % points.size();
+                qSwap(points[x], points[y]);
+            }
+            // initial polygon
+            QPolygonF polygon;
+            for (int i = 0; i < points.size(); i++)
+                polygon << QPoint(points[i].x() * ballSize.width() + ballSize.width() / 2,
+                    points[i].y() * ballSize.height() + ballSize.width() / 2);
+            QPainterPath path;
+            path.addPolygon(polygon);
+            path.closeSubpath();
+            path.setFillRule(Qt::FillRule::WindingFill);
+            eb3.path = path;
+
+            eb3.transparent = 0;
+            eb3.pen = QPen(Qt::blue, ballSize.width() / 10, Qt::SolidLine, Qt::RoundCap);
+            for (int i = 0; i < points.size(); i++)
             {
                 eb3.lines << QLine(points[i].x() * ballSize.width() + ballSize.width() / 2,
                     points[i].y() * ballSize.height() + ballSize.width() / 2,
-                    points[i + 1].x() * ballSize.width() + ballSize.width() / 2,
-                    points[i + 1].y() * ballSize.height() + ballSize.width() / 2);
+                    points[i].x() * ballSize.width() + ballSize.width() / 2,
+                    points[i].y() * ballSize.height() + ballSize.width() / 2);
             }
-            eb3.lines << QLine(points[points.size() - 1].x() * ballSize.width() + ballSize.width() / 2,
-                points[points.size() - 1].y() * ballSize.height() + ballSize.width() / 2,
-                points[0].x() * ballSize.width() + ballSize.width() / 2,
-                points[0].y() * ballSize.height() + ballSize.width() / 2);
+            int lenght = 30;
+            int lenghtCounter = 1;
+            int currentPoint = 0;
+            int linePos = 0;
             // start animation
-            eb3.pen = QPen(QColor(64, 64, 255), 1, Qt::SolidLine, Qt::RoundCap);
-            eb3.isActive = true;
-            connect(&removeTimer, &QTimer::timeout, this, [=]
+            eb3.isStage1 = true;
+            connect(&removeTimer, &QTimer::timeout, this, [=] () mutable
             {
-                eb3.pen.setWidth(eb3.pen.width() + 1);
-                removeCounter++;
-                if (removeCounter == ballSize.width() / 2)
+                QPoint p1 = points[currentPoint] * ballSize.width() + QPoint(ballSize.width() / 2, ballSize.width() / 2);
+                QPoint p2 = points[currentPoint == points.size() - 1 ? 0 : currentPoint + 1] * ballSize.width() + QPoint(ballSize.width() / 2, ballSize.width() / 2);
+                double x = ((double)p2.x() - p1.x()) / QLineF(p1, p2).length() * lenght * lenghtCounter;
+                double y = ((double)p2.y() - p1.y()) / QLineF(p1, p2).length() * lenght * lenghtCounter;
+                QPoint p = p1 + QPoint(qRound(x), qRound(y));
+                eb3.lines[currentPoint].setP2(p);
+                lenghtCounter++;
+                if (QLineF(eb3.lines[currentPoint]).length() > QLineF(p1, p2).length())
+                {
+                    currentPoint++;
+                    lenghtCounter = 1;
+                }
+                if (currentPoint == points.size())
                 {
                     removeTimer.stop();
                     disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
                     removeCounter = 0;
-                    connect(&removeTimer, &QTimer::timeout, this, [=]
+                    eb3.isStage1 = false;
+                    eb3.isStage2 = true;
+                    connect(&removeTimer, &QTimer::timeout, this, [=] () mutable
                     {
-
+                        eb3.transparent += 3;
+                        eb3.brush = QBrush(QColor(64, 64, 255, eb3.transparent));
                         removeCounter++;
-                        if (removeCounter == 1)
+                        if (removeCounter == 83)
                         {
                             removeTimer.stop();
                             disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
                             removeCounter = 0;
-
-                            eb3.isActive = false;
+                            eb3.isStage2 = false;
                             eb3.lines.clear();
-
                             QList<QList<QPoint>> removeShapes;
-                            // TODO: check error
-                            //for (int i = 0; i < points.size(); i++)
-                            //    shape << points[i];
+                            // add inner points
+                            for (int i = 0; i < fieldSize.width(); ++i)
+                            {
+                                for (int j = 0; j < fieldSize.height(); ++j)
+                                {
+                                    if (polygon.containsPoint(QPoint(i * ballSize.width() + ballSize.width() / 2,
+                                        j * ballSize.height() + ballSize.width() / 2), Qt::WindingFill))
+                                        points << QPoint(i, j);
+                                }
+                            }
                             removeShapes << points;
                             removeBalls(removeShapes, RemoveType::Bonus);
                         }
@@ -576,11 +612,19 @@ void GameField::updateGameField()
             p.drawLine(extraBonus2Lines[i]);
     }
     // draw extra bonus 3
-    if (eb3.isActive)
+    if (eb3.isStage1)
     {
         p.setPen(eb3.pen);
         for (int i = 0; i < eb3.lines.size(); i++)
             p.drawLine(eb3.lines[i]);
+    }
+    if (eb3.isStage2)
+    {
+        p.setPen(eb3.pen);
+        p.setBrush(eb3.brush);
+        for (int i = 0; i < eb3.lines.size(); i++)
+            p.drawLine(eb3.lines[i]);
+        p.drawPath(eb3.path);
     }
     setPixmap(pixmap);
 }
