@@ -462,9 +462,9 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
             }
             std::sort(pairs.begin(), pairs.end(), [=]
             (const QPair<Ball::Type, int>& left, const QPair<Ball::Type, int>& right)
-            {
-                return left.second > right.second;
-            });
+                {
+                    return left.second > right.second;
+                });
             QPair<Ball::Type, int> max = pairs[0];
             // get points of type with maximum number
             QList<QPoint> points;
@@ -477,13 +477,38 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                         points << QPoint(i, j);
                 }
             }
-            // shuffle points
-            for (int i = 0; i < std::pow(points.size(), 2); i++)
+            // connect points to get closed contour without self-crosses
+            QPointF center;
+            for (int i = 0; i < points.size(); i++)
+                center += points[i];
+            center /= points.size();
+            struct LineData
             {
-                int x = qrand() % points.size();
-                int y = qrand() % points.size();
-                qSwap(points[x], points[y]);
+                QPoint p;
+                double angle;
+                double length;
+            };
+            QList<LineData> lineData;
+            for (int i = 0; i < points.size(); i++)
+            {
+                LineData data;
+                data.p = points[i];
+                data.angle = QLineF(center, points[i]).angle();
+                data.length = QLineF(center, points[i]).length();
+                lineData << data;
             }
+            std::sort(lineData.begin(), lineData.end(), [=](LineData& left, LineData& right)
+                {
+                    if (qFuzzyCompare(left.angle, right.angle))
+                        return left.length < right.length;
+                    return left.angle < right.angle;
+                });
+            points.clear();
+            for (int i = 0; i < lineData.size(); i++)
+                points << lineData[i].p;
+            // 
+            int initialPos = points.indexOf(QPoint(x, y));
+            std::rotate(points.begin(), points.begin() + initialPos, points.end());
             // initial polygon
             QPolygonF polygon;
             for (int i = 0; i < points.size(); i++)
@@ -504,7 +529,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                     points[i].x() * ballSize + ballSize / 2,
                     points[i].y() * ballSize + ballSize / 2);
             }
-            int lenght = 30;
+            int lenght = 10;
             int lenghtCounter = 1;
             int currentPoint = 0;
             int linePos = 0;
