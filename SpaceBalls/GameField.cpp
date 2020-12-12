@@ -189,7 +189,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
         // for debug purposes
         else if (e->button() == Qt::RightButton)
         {
-            balls[x][y].SetType(Ball::ExtraBonus1);
+            balls[x][y].SetType(Ball::Bonus6);
         }
     }
 }
@@ -323,10 +323,35 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                 {
                     if (x - 3 >= 0)
                         shape << QPoint(x - 3, j);
-                    if (x < fieldSize.width() - 2)
+                    if (x < fieldSize.width() - 3)
                         shape << QPoint(x + 3, j);
                 }
             }
+            sounds[Sound::UseBonus6]->play();
+
+            b6.rect = QRect(QPoint(x * ballSize,
+                y * ballSize), QSize(ballSize, ballSize));
+            b6.isStage1 = true;
+            int step = 1;
+            int numSteps = ballSize * 3;
+            connect(&removeTimer, &QTimer::timeout, this, [=]
+            {
+                b6.rect = b6.rect.adjusted(-step, -step, step, step);
+                b6.angle += step;
+                removeCounter++;
+                if (removeCounter == numSteps)
+                {
+                    removeTimer.stop();
+                    disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+                    removeCounter = 0;
+
+                    b6.isStage1 = false;
+                    QList<QList<QPoint>> shapes;
+                    shapes << shape;
+                    removeBalls(shapes, RemoveType::Bonus);
+                }
+            });
+            removeTimer.start(timerTick);
         }
         else if (balls[x][y].GetType() == Ball::ExtraBonus1)
         {
@@ -725,6 +750,22 @@ void GameField::updateGameField()
     pixmap.fill(Qt::white);
     QPainter p(&pixmap);
     p.drawImage(QPoint(0, 0), background);
+    // bonus 6
+    if (b6.isStage1)
+    {
+        QSvgRenderer r(QString(":/bonuses/Resources/bonuses/6.svg"));
+        QImage image(b6.rect.width() - ballGap * 2, b6.rect.width() - ballGap * 2, QImage::Format_ARGB32);
+        image.fill(Qt::transparent);
+        QPainter painter(&image);
+        r.render(&painter, QRectF(0, 0, b6.rect.width() - ballGap * 2, b6.rect.height() - ballGap * 2));
+        QTransform matrix;
+        matrix.translate(image.rect().center().x(), image.rect().center().y());
+        //matrix.rotate(b6.angle);
+        // TODO: crash if use image, not imageCopy
+        auto imageCopy = image.transformed(matrix, Qt::SmoothTransformation);
+        p.drawImage(b6.rect.topLeft() + QPoint(ballGap, ballGap), imageCopy);
+    }
+    // caps and selection
     for (int i = 0; i < fieldSize.width(); ++i)
     {
         for (int j = 0; j < fieldSize.height(); ++j)
@@ -760,11 +801,9 @@ void GameField::updateGameField()
         {
             QImage image = extraBonus1Textures[eb1.meteorType[i]];
             auto r1 = image.rect();
-            QPoint center = image.rect().center();
-            QMatrix matrix;
-            matrix.translate(center.x(), center.y());
+            QTransform matrix;
             matrix.rotate(360.0 - eb1.angles[i]);
-            image = image.transformed(matrix);
+            image = image.transformed(matrix, Qt::SmoothTransformation);
             auto r2 = image.rect();
             p.drawImage(eb1.stage1CurPoints[i] - QPoint(image.width() * ballGapPercent, image.height() * ballGapPercent), image);
         }
@@ -777,9 +816,7 @@ void GameField::updateGameField()
             for (int j = 0; j < eb1.stage2CurPoints[i].size(); j++)
             {
                 QImage image = extraBonus1Textures[eb1.meteorType[i]];
-                QPoint center = image.rect().center();
-                QMatrix matrix;
-                matrix.translate(center.x(), center.y());
+                QTransform matrix;
                 matrix.rotate(360.0 - angles[j]);
                 image = image.transformed(matrix);
                 p.setOpacity(eb1.opacity);

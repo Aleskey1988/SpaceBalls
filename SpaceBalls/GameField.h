@@ -116,6 +116,13 @@ private:
     QRect bonus5Rect;
     double bonus5Transparent = 0.0;
 
+    struct Bonus6
+    {
+        bool isStage1 = false;
+        QRect rect;
+        double angle = 0;
+    } b6;
+
     struct ExtraBonus1
     {
         bool isStage1 = false;
