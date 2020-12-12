@@ -84,7 +84,8 @@ private:
 
     QSize fieldSize = QSize(12, 8);
     int ballSize = 70;
-    int ballGap = 5;
+    double ballGapPercent = 0.07;
+    int ballGap = ballSize * ballGapPercent;
     bool isFirstSelected = false;
     Ball* firstBall = nullptr;
     Ball* secondBall = nullptr;
@@ -102,6 +103,7 @@ private:
 
     QImage background;
     QList<QImage> textures;
+    QList<QImage> extraBonus1Textures;
     QList<QImage> extraBonus2Textures;
     QList<QSound*> sounds;
     QImage selectedImage;
@@ -113,6 +115,20 @@ private:
     bool isBonus5 = false;
     QRect bonus5Rect;
     double bonus5Transparent = 0.0;
+
+    struct ExtraBonus1
+    {
+        bool isStage1 = false;
+        bool isStage2 = false;
+        QList<QPointF> startPoints;
+        QList<QPointF> endPoints;
+        QList<QPointF> stage1CurPoints;
+        QList<int> meteorType;
+        QList<double> angles;
+        QVector<QList<QPointF>> stage2CurPoints;
+        double opacity = 0.0;
+        int numMeteors = 5;
+    } eb1;
 
     bool isExtraBonus2Pos = false;
     bool isExtraBonus2Lines = false;
