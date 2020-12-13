@@ -1007,6 +1007,7 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
     {
         sounds[Sound::RemoveBalls]->play();
         // update score
+        int prevScore = score;
         for (int i = 0; i < shapes.size(); i++)
         {
             // 3 - 100
@@ -1014,7 +1015,7 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
             // 5 - 300
             score += (shapes[i].size() - 2) * 100;
         }
-        emit scoreChanged(score);
+        emit scoreChanged(score, prevScore);
         // add bonuses
         if (removeType == RemoveType::Cap)
         {

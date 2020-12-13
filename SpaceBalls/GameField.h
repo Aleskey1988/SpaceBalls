@@ -22,7 +22,7 @@ public:
     int GetScore() { return score; }
 
 signals:
-    void scoreChanged(int value);
+    void scoreChanged(int value, int prevValue);
 
 protected:
     void mousePressEvent(QMouseEvent* e);
@@ -135,6 +135,7 @@ private:
         QVector<QList<QPointF>> stage2CurPoints;
         double opacity = 0.0;
         int numMeteors = 5;
+        double progress = 0;
     } eb1;
 
     bool isExtraBonus2Pos = false;
