@@ -85,7 +85,7 @@ private:
     QVector<QVector<ChainBall>> chainBalls;
 
     QSize fieldSize = QSize(12, 8);
-    int ballSize = 70;
+    int ballSize = 71;
     double ballGapPercent = 0.07;
     int ballGap = ballSize * ballGapPercent;
     bool isFirstSelected = false;

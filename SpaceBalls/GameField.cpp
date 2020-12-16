@@ -18,8 +18,8 @@ GameField::GameField(QWidget* parent)
         for (int j = 0; j < fieldSize.height(); ++j)
         {
             balls[i][j].SetType(Ball::Type(qrand() % Ball::GetBallNumber()));
-            balls[i][j].SetRect(QRect(i * ballSize + ballGap, j * ballSize + ballGap,
-                ballSize - ballGap * 2, ballSize - ballGap * 2));
+            balls[i][j].SetRect(QRect(i * ballSize, j * ballSize,
+                ballSize, ballSize));
             balls[i][j].SetPos(QPoint(i, j));
         }
     }
@@ -177,7 +177,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
             {
                 bonus4Rect = bonus4Rect.adjusted(-1, -1, 1, 1);
                 removeCounter++;
-                if (removeCounter == ballSize * 1.3)
+                if (removeCounter == (int)(ballSize * 1.3))
                 {
                     removeTimer.stop();
                     disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
@@ -289,7 +289,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
             connect(&removeTimer, &QTimer::timeout, this, [=]
             {
                 b6.rect = b6.rect.adjusted(-step, -step, step, step);
-                b6.angle += step;
+                b6.angle += step * 2;
                 removeCounter++;
                 if (removeCounter == numSteps)
                 {
@@ -706,16 +706,16 @@ void GameField::updateGameField()
     if (b6.isStage1)
     {
         QSvgRenderer r(QString(":/bonuses/Resources/bonuses/6.svg"));
-        QImage image(b6.rect.width() - ballGap * 2, b6.rect.width() - ballGap * 2, QImage::Format_ARGB32);
+        QImage image(b6.rect.width(), b6.rect.width(), QImage::Format_ARGB32);
         image.fill(Qt::transparent);
         QPainter painter(&image);
-        r.render(&painter, QRectF(0, 0, b6.rect.width() - ballGap * 2, b6.rect.height() - ballGap * 2));
+        r.render(&painter, QRectF(0, 0, b6.rect.width(), b6.rect.height()));
         QTransform matrix;
-        matrix.translate(image.rect().center().x(), image.rect().center().y());
-        //matrix.rotate(b6.angle);
+        matrix.rotate(b6.angle);
         // TODO: crash if use image, not imageCopy
         auto imageCopy = image.transformed(matrix, Qt::SmoothTransformation);
-        p.drawImage(b6.rect.topLeft() + QPoint(ballGap, ballGap), imageCopy);
+        // keep rotation center
+        p.drawImage(b6.rect.topLeft() - QPoint(imageCopy.rect().width() - b6.rect.width(), imageCopy.rect().height() - b6.rect.height()) / 2, imageCopy);
     }
     // caps and selection
     for (int i = 0; i < fieldSize.width(); ++i)
@@ -751,11 +751,9 @@ void GameField::updateGameField()
         for (int i = 0; i < eb1.stage1CurPoints.size(); i++)
         {
             QImage image = extraBonus1Textures[eb1.meteorType[i]];
-            auto r1 = image.rect();
             QTransform matrix;
             matrix.rotate(360.0 - eb1.angles[i]);
             image = image.transformed(matrix, Qt::SmoothTransformation);
-            auto r2 = image.rect();
             p.drawImage(eb1.stage1CurPoints[i] - QPoint(image.width() * ballGapPercent, image.height() * ballGapPercent), image);
         }
     }
@@ -961,9 +959,6 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
         int prevScore = score;
         for (int i = 0; i < shapes.size(); i++)
         {
-            // 3 - 100
-            // 4 - 200
-            // 5 - 300
             score += (shapes[i].size() - 2) * 100;
         }
         emit scoreChanged(score, prevScore);
@@ -1011,7 +1006,7 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
                 }
             }
             removeCounter++;
-            if (removeCounter == (ballSize - ballGap * 2) / 2)
+            if (removeCounter == ballSize / 2)
             {
                 removeCounter = 0;
                 removeTimer.stop();
@@ -1061,11 +1056,17 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
                                 Ball* ball = &balls[i][j];
                                 ball->SetType(types[j]);
                                 if (ball->GetType() == Ball::Empty)
+                                {
+                                    // ballSize % 2 is initial rect geometry
+                                    // for odd ballSize it is 1, otherwise 0
                                     ball->SetRect(QRect(ball->GetPos().x() * ballSize + ballSize / 2,
-                                        ball->GetPos().y() * ballSize + ballSize / 2, 0, 0));
+                                        ball->GetPos().y() * ballSize + ballSize / 2, ballSize % 2, ballSize % 2));
+                                }
                                 else
-                                    ball->SetRect(QRect(ball->GetPos().x() * ballSize + ballGap, ball->GetPos().y() * ballSize + ballGap,
-                                        ballSize - ballGap * 2, ballSize - ballGap * 2));
+                                {
+                                    ball->SetRect(QRect(ball->GetPos().x() * ballSize, ball->GetPos().y() * ballSize,
+                                        ballSize, ballSize));
+                                }
                             }
                         }
                         // fill empty places
@@ -1089,7 +1090,7 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
                                 balls[p.x()][p.y()].SetRect(balls[p.x()][p.y()].GetRect().adjusted(-1, -1, 1, 1));
                             }
                             ++fillCounter;
-                            if (fillCounter == (ballSize - ballGap * 2) / 2)
+                            if (fillCounter == ballSize / 2)
                             {
                                 fillCounter = 0;
                                 fillTimer.stop();
@@ -1145,12 +1146,11 @@ QList<QPair<QPoint, QPoint>> GameField::getDropData()
 }
 QImage GameField::SvgToImage(QString& fileName)
 {
-    // TOOD: allocate full size (without gaps)
     QSvgRenderer r(fileName);
-    QImage image(ballSize - ballGap * 2, ballSize - ballGap * 2, QImage::Format_ARGB32);
+    QImage image(ballSize, ballSize, QImage::Format_ARGB32);
     image.fill(Qt::transparent);
     QPainter p(&image);
-    r.render(&p, QRectF(0, 0, ballSize - ballGap * 2, ballSize - ballGap * 2));
+    r.render(&p, QRectF(ballGap, ballGap, ballSize - ballGap * 2, ballSize - ballGap * 2));
     return image;
 }
 QList<GameField::PossibleMove> GameField::getPossibleMoves()
@@ -1285,61 +1285,61 @@ void GameField::swapBalls(int x, int y)
     {
         isUseMouse = false;
         connect(&ballsSwapTimer, &QTimer::timeout, this, [=]
+        {
+            firstBall->SetRect(firstBall->GetRect().adjusted(
+                -delta.x(), -delta.y(), -delta.x(), -delta.y()));
+            secondBall->SetRect(secondBall->GetRect().adjusted(
+                delta.x(), delta.y(), delta.x(), delta.y()));
+            ++swapCounter;
+            if (swapCounter == ballSize)
             {
-                firstBall->SetRect(firstBall->GetRect().adjusted(
-                    -delta.x(), -delta.y(), -delta.x(), -delta.y()));
-                secondBall->SetRect(secondBall->GetRect().adjusted(
-                    delta.x(), delta.y(), delta.x(), delta.y()));
-                ++swapCounter;
-                if (swapCounter == ballSize)
+                swapCounter = 0;
+                ballsSwapTimer.stop();
+                disconnect(&ballsSwapTimer, &QTimer::timeout, this, nullptr);
+                firstBall->SetRect(QRect(firstBall->GetPos().x() * ballSize, firstBall->GetPos().y() * ballSize,
+                    ballSize, ballSize));
+                secondBall->SetRect(QRect(secondBall->GetPos().x() * ballSize, secondBall->GetPos().y() * ballSize,
+                    ballSize, ballSize));
+                Ball::Type tmp = firstBall->GetType();
+                firstBall->SetType(secondBall->GetType());
+                secondBall->SetType(tmp);
+                // 
+                QList<QList<QPoint>> shapes = getLineShapes(getShapes(balls));
+                if (!shapes.empty())
+                    removeBalls(shapes, RemoveType::Cap);
+                else
                 {
-                    swapCounter = 0;
-                    ballsSwapTimer.stop();
-                    disconnect(&ballsSwapTimer, &QTimer::timeout, this, nullptr);
-                    firstBall->SetRect(QRect(firstBall->GetPos().x() * ballSize + ballGap, firstBall->GetPos().y() * ballSize + ballGap,
-                        ballSize - ballGap * 2, ballSize - ballGap * 2));
-                    secondBall->SetRect(QRect(secondBall->GetPos().x() * ballSize + ballGap, secondBall->GetPos().y() * ballSize + ballGap,
-                        ballSize - ballGap * 2, ballSize - ballGap * 2));
-                    Ball::Type tmp = firstBall->GetType();
-                    firstBall->SetType(secondBall->GetType());
-                    secondBall->SetType(tmp);
-                    // 
-                    QList<QList<QPoint>> shapes = getLineShapes(getShapes(balls));
-                    if (!shapes.empty())
-                        removeBalls(shapes, RemoveType::Cap);
-                    else
+                    sounds[Sound::WrongMove]->play();
+                    QPoint delta = firstBall->GetPos() - secondBall->GetPos();
+                    if (qAbs(delta.x()) + qAbs(delta.y()) == 1)
                     {
-                        sounds[Sound::WrongMove]->play();
-                        QPoint delta = firstBall->GetPos() - secondBall->GetPos();
-                        if (qAbs(delta.x()) + qAbs(delta.y()) == 1)
+                        connect(&ballsSwapTimer, &QTimer::timeout, this, [=]
                         {
-                            connect(&ballsSwapTimer, &QTimer::timeout, this, [=]
-                                {
-                                    firstBall->SetRect(firstBall->GetRect().adjusted(
-                                        -delta.x(), -delta.y(), -delta.x(), -delta.y()));
-                                    secondBall->SetRect(secondBall->GetRect().adjusted(
-                                        delta.x(), delta.y(), delta.x(), delta.y()));
-                                    ++swapCounter;
-                                    if (swapCounter == ballSize)
-                                    {
-                                        swapCounter = 0;
-                                        ballsSwapTimer.stop();
-                                        disconnect(&ballsSwapTimer, &QTimer::timeout, this, nullptr);
-                                        firstBall->SetRect(QRect(firstBall->GetPos().x() * ballSize + ballGap, firstBall->GetPos().y() * ballSize + ballGap,
-                                            ballSize - ballGap * 2, ballSize - ballGap * 2));
-                                        secondBall->SetRect(QRect(secondBall->GetPos().x() * ballSize + ballGap, secondBall->GetPos().y() * ballSize + ballGap,
-                                            ballSize - ballGap * 2, ballSize - ballGap * 2));
-                                        Ball::Type tmp = firstBall->GetType();
-                                        firstBall->SetType(secondBall->GetType());
-                                        secondBall->SetType(tmp);
-                                        isUseMouse = true;
-                                    }
-                                });
-                            ballsSwapTimer.start(timerTick / 2);
-                        }
+                            firstBall->SetRect(firstBall->GetRect().adjusted(
+                                -delta.x(), -delta.y(), -delta.x(), -delta.y()));
+                            secondBall->SetRect(secondBall->GetRect().adjusted(
+                                delta.x(), delta.y(), delta.x(), delta.y()));
+                            ++swapCounter;
+                            if (swapCounter == ballSize)
+                            {
+                                swapCounter = 0;
+                                ballsSwapTimer.stop();
+                                disconnect(&ballsSwapTimer, &QTimer::timeout, this, nullptr);
+                                firstBall->SetRect(QRect(firstBall->GetPos().x() * ballSize, firstBall->GetPos().y() * ballSize,
+                                    ballSize, ballSize));
+                                secondBall->SetRect(QRect(secondBall->GetPos().x() * ballSize, secondBall->GetPos().y() * ballSize,
+                                    ballSize, ballSize));
+                                Ball::Type tmp = firstBall->GetType();
+                                firstBall->SetType(secondBall->GetType());
+                                secondBall->SetType(tmp);
+                                isUseMouse = true;
+                            }
+                        });
+                        ballsSwapTimer.start(timerTick / 2);
                     }
                 }
-            });
+            }
+        });
         ballsSwapTimer.start(timerTick / 2);
         isFirstSelected = false;
     }
