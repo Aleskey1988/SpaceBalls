@@ -5,6 +5,8 @@ GameField::GameField(QWidget* parent)
 {
     ui.setupUi(this);
 
+    setMouseTracking(true);
+
     qsrand(0);
     // allocate game field data
     balls.resize(fieldSize.width());
@@ -113,83 +115,33 @@ void GameField::mousePressEvent(QMouseEvent* e)
             }
             else
             {
-                firstBall->SetSelected(false);
-                secondBall = &balls[x][y];
-                QPoint delta = firstBall->GetPos() - secondBall->GetPos();
-                if (qAbs(delta.x()) + qAbs(delta.y()) == 1)
-                {
-                    isUseMouse = false;
-                    connect(&ballsSwapTimer, &QTimer::timeout, this, [=]
-                    {
-                        firstBall->SetRect(firstBall->GetRect().adjusted(
-                            -delta.x(), -delta.y(), -delta.x(), -delta.y()));
-                        secondBall->SetRect(secondBall->GetRect().adjusted(
-                            delta.x(), delta.y(), delta.x(), delta.y()));
-                        ++swapCounter;
-                        if (swapCounter == ballSize)
-                        {
-                            swapCounter = 0;
-                            ballsSwapTimer.stop();
-                            disconnect(&ballsSwapTimer, &QTimer::timeout, this, nullptr);
-                            firstBall->SetRect(QRect(firstBall->GetPos().x() * ballSize + ballGap, firstBall->GetPos().y() * ballSize + ballGap,
-                                ballSize - ballGap * 2, ballSize - ballGap * 2));
-                            secondBall->SetRect(QRect(secondBall->GetPos().x() * ballSize + ballGap, secondBall->GetPos().y() * ballSize + ballGap,
-                                ballSize - ballGap * 2, ballSize - ballGap * 2));
-                            Ball::Type tmp = firstBall->GetType();
-                            firstBall->SetType(secondBall->GetType());
-                            secondBall->SetType(tmp);
-                            // 
-                            QList<QList<QPoint>> shapes = getLineShapes(getShapes(balls));
-                            if (!shapes.empty())
-                                removeBalls(shapes, RemoveType::Cap);
-                            else
-                            {
-                                sounds[Sound::WrongMove]->play();
-                                QPoint delta = firstBall->GetPos() - secondBall->GetPos();
-                                if (qAbs(delta.x()) + qAbs(delta.y()) == 1)
-                                {
-                                    connect(&ballsSwapTimer, &QTimer::timeout, this, [=]
-                                    {
-                                        firstBall->SetRect(firstBall->GetRect().adjusted(
-                                            -delta.x(), -delta.y(), -delta.x(), -delta.y()));
-                                        secondBall->SetRect(secondBall->GetRect().adjusted(
-                                            delta.x(), delta.y(), delta.x(), delta.y()));
-                                        ++swapCounter;
-                                        if (swapCounter == ballSize)
-                                        {
-                                            swapCounter = 0;
-                                            ballsSwapTimer.stop();
-                                            disconnect(&ballsSwapTimer, &QTimer::timeout, this, nullptr);
-                                            firstBall->SetRect(QRect(firstBall->GetPos().x() * ballSize + ballGap, firstBall->GetPos().y() * ballSize + ballGap,
-                                                ballSize - ballGap * 2, ballSize - ballGap * 2));
-                                            secondBall->SetRect(QRect(secondBall->GetPos().x() * ballSize + ballGap, secondBall->GetPos().y() * ballSize + ballGap,
-                                                ballSize - ballGap * 2, ballSize - ballGap * 2));
-                                            Ball::Type tmp = firstBall->GetType();
-                                            firstBall->SetType(secondBall->GetType());
-                                            secondBall->SetType(tmp);
-                                            isUseMouse = true;
-                                        }
-                                    });
-                                    ballsSwapTimer.start(timerTick / 2);
-                                }
-                            }
-                        }
-                    });
-                    ballsSwapTimer.start(timerTick / 2);
-                    isFirstSelected = false;
-                }
-                else
-                {
-                    isFirstSelected = true;
-                    firstBall = &balls[x][y];
-                    firstBall->SetSelected(true);
-                }
+                swapBalls(x, y);
             }
         }
         // for debug purposes
         else if (e->button() == Qt::RightButton)
         {
             balls[x][y].SetType(Ball::Bonus6);
+        }
+    }
+}
+void GameField::mouseMoveEvent(QMouseEvent* e)
+{
+    if (isUseMouse && e->buttons() != Qt::NoButton)
+    {
+        QPoint pos = e->pos();
+        int x = pos.x() / ballSize;
+        int y = pos.y() / ballSize;
+        if (firstBall != nullptr)
+        {
+            QPoint p = firstBall->GetPos();
+            if ((x - p.x() == -1 && y - p.y() == 0 && x >= 0) ||
+                (x - p.x() == 1 && y - p.y() == 0 && x <= fieldSize.width() - 1) ||
+                (y - p.y() == -1 && x - p.x() == 0 && y >= 0) ||
+                (y - p.y() == 1 && x - p.x() == 0 && y <= fieldSize.height() - 1))
+            {
+                swapBalls(x, y);
+            }
         }
     }
 }
@@ -770,7 +722,6 @@ void GameField::updateGameField()
     {
         for (int j = 0; j < fieldSize.height(); ++j)
         {
-            // TODO: cap background
             // common ball
             p.drawImage(balls[i][j].GetRect().topLeft(), textures[balls[i][j].GetType()].scaled(balls[i][j].GetRect().size()));
             // selection
@@ -1324,4 +1275,78 @@ QPoint GameField::getRandomCapPos()
     while (!balls[x][y].IsBall());
     // TODO: check if there are no balls
     return QPoint(x, y);
+}
+void GameField::swapBalls(int x, int y)
+{
+    firstBall->SetSelected(false);
+    secondBall = &balls[x][y];
+    QPoint delta = firstBall->GetPos() - secondBall->GetPos();
+    if (qAbs(delta.x()) + qAbs(delta.y()) == 1)
+    {
+        isUseMouse = false;
+        connect(&ballsSwapTimer, &QTimer::timeout, this, [=]
+            {
+                firstBall->SetRect(firstBall->GetRect().adjusted(
+                    -delta.x(), -delta.y(), -delta.x(), -delta.y()));
+                secondBall->SetRect(secondBall->GetRect().adjusted(
+                    delta.x(), delta.y(), delta.x(), delta.y()));
+                ++swapCounter;
+                if (swapCounter == ballSize)
+                {
+                    swapCounter = 0;
+                    ballsSwapTimer.stop();
+                    disconnect(&ballsSwapTimer, &QTimer::timeout, this, nullptr);
+                    firstBall->SetRect(QRect(firstBall->GetPos().x() * ballSize + ballGap, firstBall->GetPos().y() * ballSize + ballGap,
+                        ballSize - ballGap * 2, ballSize - ballGap * 2));
+                    secondBall->SetRect(QRect(secondBall->GetPos().x() * ballSize + ballGap, secondBall->GetPos().y() * ballSize + ballGap,
+                        ballSize - ballGap * 2, ballSize - ballGap * 2));
+                    Ball::Type tmp = firstBall->GetType();
+                    firstBall->SetType(secondBall->GetType());
+                    secondBall->SetType(tmp);
+                    // 
+                    QList<QList<QPoint>> shapes = getLineShapes(getShapes(balls));
+                    if (!shapes.empty())
+                        removeBalls(shapes, RemoveType::Cap);
+                    else
+                    {
+                        sounds[Sound::WrongMove]->play();
+                        QPoint delta = firstBall->GetPos() - secondBall->GetPos();
+                        if (qAbs(delta.x()) + qAbs(delta.y()) == 1)
+                        {
+                            connect(&ballsSwapTimer, &QTimer::timeout, this, [=]
+                                {
+                                    firstBall->SetRect(firstBall->GetRect().adjusted(
+                                        -delta.x(), -delta.y(), -delta.x(), -delta.y()));
+                                    secondBall->SetRect(secondBall->GetRect().adjusted(
+                                        delta.x(), delta.y(), delta.x(), delta.y()));
+                                    ++swapCounter;
+                                    if (swapCounter == ballSize)
+                                    {
+                                        swapCounter = 0;
+                                        ballsSwapTimer.stop();
+                                        disconnect(&ballsSwapTimer, &QTimer::timeout, this, nullptr);
+                                        firstBall->SetRect(QRect(firstBall->GetPos().x() * ballSize + ballGap, firstBall->GetPos().y() * ballSize + ballGap,
+                                            ballSize - ballGap * 2, ballSize - ballGap * 2));
+                                        secondBall->SetRect(QRect(secondBall->GetPos().x() * ballSize + ballGap, secondBall->GetPos().y() * ballSize + ballGap,
+                                            ballSize - ballGap * 2, ballSize - ballGap * 2));
+                                        Ball::Type tmp = firstBall->GetType();
+                                        firstBall->SetType(secondBall->GetType());
+                                        secondBall->SetType(tmp);
+                                        isUseMouse = true;
+                                    }
+                                });
+                            ballsSwapTimer.start(timerTick / 2);
+                        }
+                    }
+                }
+            });
+        ballsSwapTimer.start(timerTick / 2);
+        isFirstSelected = false;
+    }
+    else
+    {
+        isFirstSelected = true;
+        firstBall = &balls[x][y];
+        firstBall->SetSelected(true);
+    }
 }

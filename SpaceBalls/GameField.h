@@ -26,6 +26,7 @@ signals:
 
 protected:
     void mousePressEvent(QMouseEvent* e);
+    void mouseMoveEvent(QMouseEvent* e);
     void mouseDoubleClickEvent(QMouseEvent* e);
 
 private:
@@ -77,6 +78,7 @@ private:
     QList<PossibleMove> getPossibleMoves();
     void shuffleCaps();
     QPoint getRandomCapPos();
+    void swapBalls(int x, int y);
 
     Ui::GameField ui;
     QVector<QVector<Ball>> balls;
