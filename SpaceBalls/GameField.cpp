@@ -23,17 +23,26 @@ GameField::GameField(QWidget* parent)
             balls[i][j].SetPos(QPoint(i, j));
         }
     }
-    shuffleCaps();
+    shuffleBalls();
+
+    ebp1.maxValue = 10000;
+    ebp1.rect = QRect(0, 0, 100, 100);
+    ebp1.pos = QPoint((extraBonusesArea.width() - ebp1.rect.width()) / 2, (extraBonusesArea.width() - ebp1.rect.width()) / 2);
+    ebp2.maxValue = 10000;
+    ebp2.rect = QRect(0, 0, 100, 100);
+    ebp2.pos = QPoint((extraBonusesArea.width() - ebp2.rect.width()) / 2, (extraBonusesArea.width() - ebp2.rect.width()) / 2 + ebp2.rect.height());
+    ebp3.maxValue = 10000;
+    ebp3.rect = QRect(0, 0, 100, 100);
+    ebp3.pos = QPoint((extraBonusesArea.width() - ebp3.rect.width()) / 2, (extraBonusesArea.width() - ebp3.rect.width()) / 2 + ebp3.rect.height() * 2);
 
     // debug
-    //balls[0][0].SetType(Ball::Cap6);
-    //balls[0][1].SetType(Ball::Cap6);
-    //balls[1][2].SetType(Ball::Cap6);
-    //balls[0][3].SetType(Ball::Cap6);
-    //balls[0][4].SetType(Ball::Cap6);
+    //balls[0][0].SetType(Ball::Ball6);
+    //balls[0][1].SetType(Ball::Ball6);
+    //balls[1][2].SetType(Ball::Ball6);
+    //balls[0][3].SetType(Ball::Ball6);
+    //balls[0][4].SetType(Ball::Ball6);
 
-    background = QImage(":/misc/Resources/space.jpg").scaled(
-        fieldSize.width() * ballSize, fieldSize.height() * ballSize);
+    background = QImage(":/misc/Resources/space.jpg").scaled(gameFieldSize);
     // convert SVG rextures to QImage
     textures << SvgToImage(QString(":/caps/Resources/caps/01-saturn.svg"));
     textures << SvgToImage(QString(":/caps/Resources/caps/02-jupiter.svg"));
@@ -75,27 +84,12 @@ GameField::GameField(QWidget* parent)
     //music->play();
 
     connect(&timer, &QTimer::timeout, this, &GameField::updateGameField);
-    timer.start(timerTick);
+    timer.start(1000 / fps);
 }
 
 void GameField::Test()
 {
-    shuffleCaps();
-}
-void GameField::CallExtraBonus1()
-{
-    QPoint pos = getRandomCapPos();
-    balls[pos.x()][pos.y()].SetType(Ball::ExtraBonus1);
-}
-void GameField::CallExtraBonus2()
-{
-    QPoint pos = getRandomCapPos();
-    balls[pos.x()][pos.y()].SetType(Ball::ExtraBonus2);
-}
-void GameField::CallExtraBonus3()
-{
-    QPoint pos = getRandomCapPos();
-    balls[pos.x()][pos.y()].SetType(Ball::ExtraBonus3);
+    shuffleBalls();
 }
 
 void GameField::mousePressEvent(QMouseEvent* e)
@@ -103,25 +97,35 @@ void GameField::mousePressEvent(QMouseEvent* e)
     if (isUseMouse)
     {
         QPoint pos = e->pos();
-        int x = pos.x() / ballSize;
-        int y = pos.y() / ballSize;
-        if (e->button() == Qt::LeftButton)
+        // game field area
+        if (gameFieldArea.contains(pos))
         {
-            if (!isFirstSelected)
+            pos -= gameFieldArea.topLeft();
+            int x = pos.x() / ballSize;
+            int y = pos.y() / ballSize;
+            if (e->button() == Qt::LeftButton)
             {
-                isFirstSelected = true;
-                firstBall = &balls[x][y];
-                firstBall->SetSelected(true);
+                if (!isFirstSelected)
+                {
+                    isFirstSelected = true;
+                    firstBall = &balls[x][y];
+                    firstBall->SetSelected(true);
+                }
+                else
+                {
+                    swapBalls(x, y);
+                }
             }
-            else
+            // for debug purposes
+            else if (e->button() == Qt::RightButton)
             {
-                swapBalls(x, y);
+                balls[x][y].SetType(Ball::Bonus6);
             }
         }
-        // for debug purposes
-        else if (e->button() == Qt::RightButton)
+        // extra bonuses area
+        else if (extraBonusesArea.contains(pos))
         {
-            balls[x][y].SetType(Ball::Bonus6);
+            pos -= extraBonusesArea.topLeft();
         }
     }
 }
@@ -130,17 +134,22 @@ void GameField::mouseMoveEvent(QMouseEvent* e)
     if (isUseMouse && e->buttons() != Qt::NoButton)
     {
         QPoint pos = e->pos();
-        int x = pos.x() / ballSize;
-        int y = pos.y() / ballSize;
-        if (firstBall != nullptr)
+        // game field area
+        if (gameFieldArea.contains(pos))
         {
-            QPoint p = firstBall->GetPos();
-            if ((x - p.x() == -1 && y - p.y() == 0 && x >= 0) ||
-                (x - p.x() == 1 && y - p.y() == 0 && x <= fieldSize.width() - 1) ||
-                (y - p.y() == -1 && x - p.x() == 0 && y >= 0) ||
-                (y - p.y() == 1 && x - p.x() == 0 && y <= fieldSize.height() - 1))
+            pos -= gameFieldArea.topLeft();
+            int x = pos.x() / ballSize;
+            int y = pos.y() / ballSize;
+            if (firstBall != nullptr)
             {
-                swapBalls(x, y);
+                QPoint p = firstBall->GetPos();
+                if ((x - p.x() == -1 && y - p.y() == 0 && x >= 0) ||
+                    (x - p.x() == 1 && y - p.y() == 0 && x <= fieldSize.width() - 1) ||
+                    (y - p.y() == -1 && x - p.x() == 0 && y >= 0) ||
+                    (y - p.y() == 1 && x - p.x() == 0 && y <= fieldSize.height() - 1))
+                {
+                    swapBalls(x, y);
+                }
             }
         }
     }
@@ -150,558 +159,574 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
     if (isUseMouse)
     {
         QPoint pos = e->pos();
-        int x = pos.x() / ballSize;
-        int y = pos.y() / ballSize;
-        balls[x][y].SetSelected(false);
-        if (balls[x][y].GetType() == Ball::Bonus4)
+        // game field area
+        if (gameFieldArea.contains(pos))
         {
-            isUseMouse = false;
-            QList<QPoint> shape;
-            shape << QPoint(x, y);
-            if (x > 0)
-                shape << QPoint(x - 1, y);
-            if (x < fieldSize.width() - 1)
-                shape << QPoint(x + 1, y);
-            if (y > 0)
-                shape << QPoint(x, y - 1);
-            if (y < fieldSize.height() - 1)
-                shape << QPoint(x, y + 1);
-            sounds[Sound::UseBonus4]->play();
-
-            bonus4Pen = QPen(QColor(255, 192, 0), 4);
-            bonus4Rect = QRect(QPoint(x * ballSize + ballSize / 2,
-                y * ballSize + ballSize / 2),
-                QSize(0, 0));
-            isBonus4 = true;
-            connect(&removeTimer, &QTimer::timeout, this, [=]
+            pos -= gameFieldArea.topLeft();
+            int x = pos.x() / ballSize;
+            int y = pos.y() / ballSize;
+            balls[x][y].SetSelected(false);
+            if (balls[x][y].GetType() == Ball::Bonus4)
             {
-                bonus4Rect = bonus4Rect.adjusted(-1, -1, 1, 1);
-                removeCounter++;
-                if (removeCounter == (int)(ballSize * 1.3))
+                isUseMouse = false;
+                QList<QPoint> shape;
+                shape << QPoint(x, y);
+                if (x > 0)
+                    shape << QPoint(x - 1, y);
+                if (x < fieldSize.width() - 1)
+                    shape << QPoint(x + 1, y);
+                if (y > 0)
+                    shape << QPoint(x, y - 1);
+                if (y < fieldSize.height() - 1)
+                    shape << QPoint(x, y + 1);
+                sounds[Sound::UseBonus4]->play();
+
+                b4.rect = QRect(QPoint(x * ballSize + ballSize / 2,
+                    y * ballSize + ballSize / 2),
+                    QSize(0, 0));
+                b4.isActive = true;
+                connect(&removeTimer, &QTimer::timeout, this, [=]
                 {
-                    removeTimer.stop();
-                    disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
-                    removeCounter = 0;
+                    b4.rect.adjust(-1, -1, 1, 1);
+                    removeCounter++;
+                    if (removeCounter == (int)(ballSize * 1.3))
+                    {
+                        removeTimer.stop();
+                        disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+                        removeCounter = 0;
 
-                    isBonus4 = false;
-                    QList<QList<QPoint>> shapes;
-                    shapes << shape;
-                    removeBalls(shapes, RemoveType::Bonus);
-                }
-            });
-            removeTimer.start(timerTick);
-        }
-        else if (balls[x][y].GetType() == Ball::Bonus5)
-        {
-            isUseMouse = false;
-            QList<QPoint> shape;
-            for (int i = x - 1; i <= x + 1; i++)
+                        b4.isActive = false;
+                        QList<QList<QPoint>> shapes;
+                        shapes << shape;
+                        removeBalls(shapes, RemoveType::Bonus);
+                    }
+                });
+                removeTimer.start(timerTick);
+            }
+            else if (balls[x][y].GetType() == Ball::Bonus5)
             {
+                isUseMouse = false;
+                QList<QPoint> shape;
+                for (int i = x - 1; i <= x + 1; i++)
+                {
+                    for (int j = y - 1; j <= y + 1; j++)
+                    {
+                        if (i >= 0 && i < fieldSize.width() && j >= 0 && j < fieldSize.height())
+                            shape << QPoint(i, j);
+                    }
+                }
+                for (int i = x - 1; i <= x + 1; i++)
+                {
+                    if (i >= 0 && i < fieldSize.width())
+                    {
+                        if (y - 2 >= 0)
+                            shape << QPoint(i, y - 2);
+                        if (y < fieldSize.height() - 2)
+                            shape << QPoint(i, y + 2);
+                    }
+                }
                 for (int j = y - 1; j <= y + 1; j++)
                 {
-                    if (i >= 0 && i < fieldSize.width() && j >= 0 && j < fieldSize.height())
-                        shape << QPoint(i, j);
+                    if (j >= 0 && j < fieldSize.height())
+                    {
+                        if (x - 2 >= 0)
+                            shape << QPoint(x - 2, j);
+                        if (x < fieldSize.width() - 2)
+                            shape << QPoint(x + 2, j);
+                    }
                 }
-            }
-            for (int i = x - 1; i <= x + 1; i++)
-            {
-                if (i >= 0 && i < fieldSize.width())
-                {
-                    if (y - 2 >= 0)
-                        shape << QPoint(i, y - 2);
-                    if (y < fieldSize.height() - 2)
-                        shape << QPoint(i, y + 2);
-                }
-            }
-            for (int j = y - 1; j <= y + 1; j++)
-            {
-                if (j >= 0 && j < fieldSize.height())
-                {
-                    if (x - 2 >= 0)
-                        shape << QPoint(x - 2, j);
-                    if (x < fieldSize.width() - 2)
-                        shape << QPoint(x + 2, j);
-                }
-            }
-            sounds[Sound::UseBonus5]->play();
+                sounds[Sound::UseBonus5]->play();
 
-            bonus5Rect = QRect(QPoint(x * ballSize,
-                y * ballSize), QSize(ballSize, ballSize));
-            isBonus5 = true;
-            int step = 3;
-            connect(&removeTimer, &QTimer::timeout, this, [=]
-            {
-                bonus5Rect = bonus5Rect.adjusted(-step, -step, step, step);
-                removeCounter++;
-                if (removeCounter == ballSize / 2)
+                bonus5Rect = QRect(QPoint(x * ballSize,
+                    y * ballSize), QSize(ballSize, ballSize));
+                isBonus5 = true;
+                int step = 3;
+                connect(&removeTimer, &QTimer::timeout, this, [=]
                 {
-                    removeTimer.stop();
-                    disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
-                    removeCounter = 0;
+                    bonus5Rect = bonus5Rect.adjusted(-step, -step, step, step);
+                    removeCounter++;
+                    if (removeCounter == ballSize / 2)
+                    {
+                        removeTimer.stop();
+                        disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+                        removeCounter = 0;
 
-                    isBonus5 = false;
-                    QList<QList<QPoint>> shapes;
-                    shapes << shape;
-                    removeBalls(shapes, RemoveType::Bonus);
-                }
-            });
-            removeTimer.start(timerTick);
-        }
-        else if (balls[x][y].GetType() == Ball::Bonus6)
-        {
-            isUseMouse = false;
-            QList<QPoint> shape;
-            for (int i = x - 2; i <= x + 2; i++)
+                        isBonus5 = false;
+                        QList<QList<QPoint>> shapes;
+                        shapes << shape;
+                        removeBalls(shapes, RemoveType::Bonus);
+                    }
+                });
+                removeTimer.start(timerTick);
+            }
+            else if (balls[x][y].GetType() == Ball::Bonus6)
             {
+                isUseMouse = false;
+                QList<QPoint> shape;
+                for (int i = x - 2; i <= x + 2; i++)
+                {
+                    for (int j = y - 2; j <= y + 2; j++)
+                    {
+                        if (i >= 0 && i < fieldSize.width() && j >= 0 && j < fieldSize.height())
+                            shape << QPoint(i, j);
+                    }
+                }
+                for (int i = x - 2; i <= x + 2; i++)
+                {
+                    if (i >= 0 && i < fieldSize.width())
+                    {
+                        if (y - 3 >= 0)
+                            shape << QPoint(i, y - 3);
+                        if (y < fieldSize.height() - 3)
+                            shape << QPoint(i, y + 3);
+                    }
+                }
                 for (int j = y - 2; j <= y + 2; j++)
                 {
-                    if (i >= 0 && i < fieldSize.width() && j >= 0 && j < fieldSize.height())
-                        shape << QPoint(i, j);
+                    if (j >= 0 && j < fieldSize.height())
+                    {
+                        if (x - 3 >= 0)
+                            shape << QPoint(x - 3, j);
+                        if (x < fieldSize.width() - 3)
+                            shape << QPoint(x + 3, j);
+                    }
                 }
-            }
-            for (int i = x - 2; i <= x + 2; i++)
-            {
-                if (i >= 0 && i < fieldSize.width())
-                {
-                    if (y - 3 >= 0)
-                        shape << QPoint(i, y - 3);
-                    if (y < fieldSize.height() - 3)
-                        shape << QPoint(i, y + 3);
-                }
-            }
-            for (int j = y - 2; j <= y + 2; j++)
-            {
-                if (j >= 0 && j < fieldSize.height())
-                {
-                    if (x - 3 >= 0)
-                        shape << QPoint(x - 3, j);
-                    if (x < fieldSize.width() - 3)
-                        shape << QPoint(x + 3, j);
-                }
-            }
-            sounds[Sound::UseBonus6]->play();
+                sounds[Sound::UseBonus6]->play();
 
-            b6.rect = QRect(QPoint(x * ballSize,
-                y * ballSize), QSize(ballSize, ballSize));
-            b6.isStage1 = true;
-            int step = 1;
-            int numSteps = ballSize * 3;
-            connect(&removeTimer, &QTimer::timeout, this, [=]
-            {
-                b6.rect = b6.rect.adjusted(-step, -step, step, step);
-                b6.angle += step * 2;
-                removeCounter++;
-                if (removeCounter == numSteps)
+                b6.rect = QRect(QPoint(x * ballSize,
+                    y * ballSize), QSize(ballSize, ballSize));
+                b6.isStage1 = true;
+                int step = 1;
+                int numSteps = ballSize * 3;
+                connect(&removeTimer, &QTimer::timeout, this, [=]
                 {
-                    removeTimer.stop();
-                    disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
-                    removeCounter = 0;
+                    b6.rect = b6.rect.adjusted(-step, -step, step, step);
+                    b6.angle += step * 2;
+                    removeCounter++;
+                    if (removeCounter == numSteps)
+                    {
+                        removeTimer.stop();
+                        disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+                        removeCounter = 0;
 
-                    b6.isStage1 = false;
-                    QList<QList<QPoint>> shapes;
-                    shapes << shape;
-                    removeBalls(shapes, RemoveType::Bonus);
-                }
-            });
-            removeTimer.start(timerTick);
-        }
-        else if (balls[x][y].GetType() == Ball::ExtraBonus1)
-        {
-            isUseMouse = false;
-            QList<QPoint> shape;
-            // fill initial rects positions outside of game field
-            for (int i = 0; i < eb1.numMeteors; i++)
-            {
-                int side = qrand() % 4;
-                int x = 0;
-                int y = 0;
-                // left
-                if (side == 0)
-                {
-                    x = -1;
-                    y = qrand() % fieldSize.height();
-                }
-                // right
-                else if (side == 1)
-                {
-                    x = fieldSize.width();
-                    y = qrand() % fieldSize.height();
-                }
-                // top
-                else if (side == 2)
-                {
-                    x = qrand() % fieldSize.width();
-                    y = -1;
-                }
-                // bottom
-                else if (side == 3)
-                {
-                    x = qrand() % fieldSize.width();
-                    y = fieldSize.height();
-                }
-                eb1.startPoints << QPointF(x, y) * ballSize;
+                        b6.isStage1 = false;
+                        QList<QList<QPoint>> shapes;
+                        shapes << shape;
+                        removeBalls(shapes, RemoveType::Bonus);
+                    }
+                });
+                removeTimer.start(timerTick);
             }
-            eb1.stage1CurPoints = eb1.startPoints;
-            // fill rects destination positions on game field
-            for (int i = 0; i < eb1.numMeteors; i++)
+            else if (balls[x][y].GetType() == Ball::ExtraBonus1)
             {
-                QPoint pos = getRandomCapPos();
-                eb1.endPoints << QPointF(pos) * ballSize;
-                // fill shape points
-                shape << pos;
-                if (pos.x() > 0 && pos.y() > 0)
-                    shape << QPoint(pos.x() - 1, pos.y() - 1);
-                if (pos.x() < fieldSize.width() - 1 && pos.y() > 0)
-                    shape << QPoint(pos.x() + 1, pos.y() - 1);
-                if (pos.x() < fieldSize.width() - 1 && pos.y() < fieldSize.height() - 1)
-                    shape << QPoint(pos.x() + 1, pos.y() + 1);
-                if (pos.x() > 0 && pos.y() < fieldSize.height() - 1)
-                    shape << QPoint(pos.x() - 1, pos.y() + 1);
-            }
-            // remove shape points dublicates
-
-            // 
-            for (int i = 0; i < eb1.numMeteors; i++)
-            {
-                eb1.meteorType << qrand() % 3;
-                eb1.angles << QLineF(eb1.startPoints[i], eb1.endPoints[i]).angle();
-            }
-            // start animation
-            eb1.isStage1 = true;
-            int numSteps = 250;
-            int curStep = 0;
-            connect(&removeTimer, &QTimer::timeout, this, [=] () mutable
-            {
+                isUseMouse = false;
+                QList<QPoint> shape;
+                // fill initial rects positions outside of game field
                 for (int i = 0; i < eb1.numMeteors; i++)
                 {
-                    QPointF p1 = eb1.startPoints[i];
-                    QPointF p2 = eb1.endPoints[i];
-                    double x = p1.x() + ((double)p2.x() - p1.x()) * ((double)curStep / numSteps);
-                    double y = p1.y() + ((double)p2.y() - p1.y()) * ((double)curStep / numSteps);
-                    eb1.stage1CurPoints[i] = QPointF(x, y);
-                }
-                curStep++;
-                if (curStep == numSteps + 1)
-                {
-                    removeTimer.stop();
-                    disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
-                    removeCounter = 0;
-                    eb1.isStage1 = false;
-                    eb1.startPoints.clear();
-                    eb1.angles.clear();
-                    eb1.stage2CurPoints.resize(eb1.numMeteors);
-                    for (int i = 0; i < eb1.endPoints.size(); i++)
+                    int side = qrand() % 4;
+                    int x = 0;
+                    int y = 0;
+                    // left
+                    if (side == 0)
                     {
-                        for (int j = 0; j < 4; j++)
-                        {
-                            eb1.stage2CurPoints[i] << eb1.endPoints[i];
-                        }
+                        x = -1;
+                        y = qrand() % fieldSize.height();
                     }
-                    eb1.opacity = 1.0;
-                    // 
-                    eb1.isStage2 = true;
-                    double step = 1;
-                    int numSteps = ballSize;
-                    double opacityStep = step / numSteps;
-                    connect(&removeTimer, &QTimer::timeout, this, [=]
+                    // right
+                    else if (side == 1)
                     {
+                        x = fieldSize.width();
+                        y = qrand() % fieldSize.height();
+                    }
+                    // top
+                    else if (side == 2)
+                    {
+                        x = qrand() % fieldSize.width();
+                        y = -1;
+                    }
+                    // bottom
+                    else if (side == 3)
+                    {
+                        x = qrand() % fieldSize.width();
+                        y = fieldSize.height();
+                    }
+                    eb1.startPoints << QPointF(x, y) * ballSize;
+                }
+                eb1.stage1CurPoints = eb1.startPoints;
+                // fill rects destination positions on game field
+                for (int i = 0; i < eb1.numMeteors; i++)
+                {
+                    QPoint pos = getRandomBallPos();
+                    eb1.endPoints << QPointF(pos) * ballSize;
+                    // fill shape points
+                    shape << pos;
+                    if (pos.x() > 0 && pos.y() > 0)
+                        shape << QPoint(pos.x() - 1, pos.y() - 1);
+                    if (pos.x() < fieldSize.width() - 1 && pos.y() > 0)
+                        shape << QPoint(pos.x() + 1, pos.y() - 1);
+                    if (pos.x() < fieldSize.width() - 1 && pos.y() < fieldSize.height() - 1)
+                        shape << QPoint(pos.x() + 1, pos.y() + 1);
+                    if (pos.x() > 0 && pos.y() < fieldSize.height() - 1)
+                        shape << QPoint(pos.x() - 1, pos.y() + 1);
+                }
+                // remove shape points dublicates
+
+                // 
+                for (int i = 0; i < eb1.numMeteors; i++)
+                {
+                    eb1.meteorType << qrand() % 3;
+                    eb1.angles << QLineF(eb1.startPoints[i], eb1.endPoints[i]).angle();
+                }
+                // start animation
+                eb1.isStage1 = true;
+                int numSteps = 250;
+                int curStep = 0;
+                connect(&removeTimer, &QTimer::timeout, this, [=] () mutable
+                {
+                    for (int i = 0; i < eb1.numMeteors; i++)
+                    {
+                        QPointF p1 = eb1.startPoints[i];
+                        QPointF p2 = eb1.endPoints[i];
+                        double x = p1.x() + ((double)p2.x() - p1.x()) * ((double)curStep / numSteps);
+                        double y = p1.y() + ((double)p2.y() - p1.y()) * ((double)curStep / numSteps);
+                        eb1.stage1CurPoints[i] = QPointF(x, y);
+                    }
+                    curStep++;
+                    if (curStep == numSteps + 1)
+                    {
+                        removeTimer.stop();
+                        disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+                        removeCounter = 0;
+                        eb1.isStage1 = false;
+                        eb1.startPoints.clear();
+                        eb1.angles.clear();
+                        eb1.stage2CurPoints.resize(eb1.numMeteors);
                         for (int i = 0; i < eb1.endPoints.size(); i++)
                         {
-                            eb1.stage2CurPoints[i][0] += QPointF(-step, -step);
-                            eb1.stage2CurPoints[i][1] += QPointF(-step, step);
-                            eb1.stage2CurPoints[i][2] += QPointF(step, step);
-                            eb1.stage2CurPoints[i][3] += QPointF(step, -step);
+                            for (int j = 0; j < 4; j++)
+                            {
+                                eb1.stage2CurPoints[i] << eb1.endPoints[i];
+                            }
                         }
-                        eb1.opacity -= opacityStep / 2;
-                        removeCounter++;
-                        if (removeCounter == ballSize)
+                        eb1.opacity = 1.0;
+                        // 
+                        eb1.isStage2 = true;
+                        double step = 1;
+                        int numSteps = ballSize;
+                        double opacityStep = step / numSteps;
+                        connect(&removeTimer, &QTimer::timeout, this, [=]
                         {
-                            removeTimer.stop();
-                            disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
-                            removeCounter = 0;
-                            eb1.isStage2 = false;
-                            eb1.endPoints.clear();
-                            eb1.stage2CurPoints.clear();
-                            eb1.meteorType.clear();
+                            for (int i = 0; i < eb1.endPoints.size(); i++)
+                            {
+                                eb1.stage2CurPoints[i][0] += QPointF(-step, -step);
+                                eb1.stage2CurPoints[i][1] += QPointF(-step, step);
+                                eb1.stage2CurPoints[i][2] += QPointF(step, step);
+                                eb1.stage2CurPoints[i][3] += QPointF(step, -step);
+                            }
+                            eb1.opacity -= opacityStep / 2;
+                            removeCounter++;
+                            if (removeCounter == ballSize)
+                            {
+                                removeTimer.stop();
+                                disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+                                removeCounter = 0;
+                                eb1.isStage2 = false;
+                                eb1.endPoints.clear();
+                                eb1.stage2CurPoints.clear();
+                                eb1.meteorType.clear();
 
-                            QList<QList<QPoint>> removeShapes;
-                            removeShapes << shape;
-                            removeBalls(removeShapes, RemoveType::Bonus);
-                        }
-                    });
-                    removeTimer.start(timerTick);
-                }
-            });
-            removeTimer.start(timerTick);
-        }
-        else if (balls[x][y].GetType() == Ball::ExtraBonus2)
-        {
-            isUseMouse = false;
-            QVector<QList<QPoint>> shapes(4);
-            for (int i = x - 1; i > -1; i--)
-                shapes[0] << QPoint(i, y);
-            for (int i = x + 1; i < fieldSize.width(); i++)
-                shapes[1] << QPoint(i, y);
-            for (int j = y - 1; j > -1; j--)
-                shapes[2] << QPoint(x, j);
-            for (int j = y + 1; j < fieldSize.height(); j++)
-                shapes[3] << QPoint(x, j);
-
-            for (int i = 0; i < 4; i++)
-                extraBonus2Pos << QPoint(x * ballSize, y * ballSize);
-
-            for (int i = 0; i < shapes.size(); i++)
-                extraBonus2Lines << QLine(
-                    (x + 0.5) * ballSize,
-                    (y + 0.5) * ballSize,
-                    (x + 0.5) * ballSize,
-                    (y + 0.5) * ballSize);
-
-            isExtraBonus2Pos = true;
-            int maxSize = qMax(shapes[0].size(), qMax(shapes[1].size(), qMax(shapes[2].size(), shapes[3].size())));
-            int step = 2;
-            isExtraBonus2Lines = true;
-
-            connect(&removeTimer, &QTimer::timeout, this, [=]
+                                QList<QList<QPoint>> removeShapes;
+                                removeShapes << shape;
+                                removeBalls(removeShapes, RemoveType::Bonus);
+                            }
+                        });
+                        removeTimer.start(timerTick);
+                    }
+                });
+                removeTimer.start(timerTick);
+            }
+            else if (balls[x][y].GetType() == Ball::ExtraBonus2)
             {
-                extraBonus2Transparent = (int)(192.0 * removeCounter / (double)(maxSize * ballSize / step));
-                extraBonus2Pen = QPen(QColor(255, 128, 0, extraBonus2Transparent), ballSize / 10);
-                if (extraBonus2Pos[0].x() > 0)
-                {
-                    extraBonus2Pos[0] += QPoint(-step, 0);
-                    extraBonus2Lines[0].setP2(QPoint(
-                        extraBonus2Lines[0].p2().x() - step,
-                        extraBonus2Lines[0].p2().y()));
-                }
-                if (extraBonus2Pos[1].x() < (fieldSize.width() - 1) * ballSize)
-                {
-                    extraBonus2Pos[1] += QPoint(step, 0);
-                    extraBonus2Lines[1].setP2(QPoint(
-                        extraBonus2Lines[1].p2().x() + step,
-                        extraBonus2Lines[1].p2().y()));
-                }
-                if (extraBonus2Pos[2].y() > 0)
-                {
-                    extraBonus2Pos[2] += QPoint(0, -step);
-                    extraBonus2Lines[2].setP2(QPoint(
-                        extraBonus2Lines[2].p2().x(),
-                        extraBonus2Lines[2].p2().y() - step));
-                }
-                if (extraBonus2Pos[3].y() < (fieldSize.height() - 1) * ballSize)
-                {
-                    extraBonus2Pos[3] += QPoint(0, step);
-                    extraBonus2Lines[3].setP2(QPoint(
-                        extraBonus2Lines[3].p2().x(),
-                        extraBonus2Lines[3].p2().y() + step));
-                }
+                isUseMouse = false;
+                QVector<QList<QPoint>> shapes(4);
+                for (int i = x - 1; i > -1; i--)
+                    shapes[0] << QPoint(i, y);
+                for (int i = x + 1; i < fieldSize.width(); i++)
+                    shapes[1] << QPoint(i, y);
+                for (int j = y - 1; j > -1; j--)
+                    shapes[2] << QPoint(x, j);
+                for (int j = y + 1; j < fieldSize.height(); j++)
+                    shapes[3] << QPoint(x, j);
 
-                removeCounter++;
-                if (removeCounter == maxSize * ballSize / step)
-                {
-                    removeTimer.stop();
-                    disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
-                    removeCounter = 0;
+                for (int i = 0; i < 4; i++)
+                    extraBonus2Pos << QPoint(x * ballSize, y * ballSize);
 
-                    extraBonus2Pen.setCapStyle(Qt::RoundCap);
-                    connect(&removeTimer, &QTimer::timeout, this, [=]
+                for (int i = 0; i < shapes.size(); i++)
+                    extraBonus2Lines << QLine(
+                        (x + 0.5) * ballSize,
+                        (y + 0.5) * ballSize,
+                        (x + 0.5) * ballSize,
+                        (y + 0.5) * ballSize);
+
+                isExtraBonus2Pos = true;
+                int maxSize = qMax(shapes[0].size(), qMax(shapes[1].size(), qMax(shapes[2].size(), shapes[3].size())));
+                int step = 2;
+                isExtraBonus2Lines = true;
+
+                connect(&removeTimer, &QTimer::timeout, this, [=]
+                {
+                    extraBonus2Transparent = (int)(192.0 * removeCounter / (double)(maxSize * ballSize / step));
+                    extraBonus2Pen = QPen(QColor(255, 128, 0, extraBonus2Transparent), ballSize / 10);
+                    if (extraBonus2Pos[0].x() > 0)
                     {
-                        extraBonus2Transparent = (int)(192.0 + 63.0 * removeCounter / (double)(ballSize / 2));
-                        extraBonus2Pen.setColor(QColor(255, 128, 0, extraBonus2Transparent));
-                        extraBonus2Pen.setWidth(extraBonus2Pen.width() + 1);
-                        removeCounter++;
-                        if (removeCounter == ballSize / 2)
+                        extraBonus2Pos[0] += QPoint(-step, 0);
+                        extraBonus2Lines[0].setP2(QPoint(
+                            extraBonus2Lines[0].p2().x() - step,
+                            extraBonus2Lines[0].p2().y()));
+                    }
+                    if (extraBonus2Pos[1].x() < (fieldSize.width() - 1) * ballSize)
+                    {
+                        extraBonus2Pos[1] += QPoint(step, 0);
+                        extraBonus2Lines[1].setP2(QPoint(
+                            extraBonus2Lines[1].p2().x() + step,
+                            extraBonus2Lines[1].p2().y()));
+                    }
+                    if (extraBonus2Pos[2].y() > 0)
+                    {
+                        extraBonus2Pos[2] += QPoint(0, -step);
+                        extraBonus2Lines[2].setP2(QPoint(
+                            extraBonus2Lines[2].p2().x(),
+                            extraBonus2Lines[2].p2().y() - step));
+                    }
+                    if (extraBonus2Pos[3].y() < (fieldSize.height() - 1) * ballSize)
+                    {
+                        extraBonus2Pos[3] += QPoint(0, step);
+                        extraBonus2Lines[3].setP2(QPoint(
+                            extraBonus2Lines[3].p2().x(),
+                            extraBonus2Lines[3].p2().y() + step));
+                    }
+
+                    removeCounter++;
+                    if (removeCounter == maxSize * ballSize / step)
+                    {
+                        removeTimer.stop();
+                        disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+                        removeCounter = 0;
+
+                        extraBonus2Pen.setCapStyle(Qt::RoundCap);
+                        connect(&removeTimer, &QTimer::timeout, this, [=]
                         {
-                            removeTimer.stop();
-                            disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
-                            removeCounter = 0;
+                            extraBonus2Transparent = (int)(192.0 + 63.0 * removeCounter / (double)(ballSize / 2));
+                            extraBonus2Pen.setColor(QColor(255, 128, 0, extraBonus2Transparent));
+                            extraBonus2Pen.setWidth(extraBonus2Pen.width() + 1);
+                            removeCounter++;
+                            if (removeCounter == ballSize / 2)
+                            {
+                                removeTimer.stop();
+                                disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+                                removeCounter = 0;
 
-                            isExtraBonus2Pos = false;
-                            extraBonus2Pos.clear();
-                            isExtraBonus2Lines = false;
-                            extraBonus2Lines.clear();
+                                isExtraBonus2Pos = false;
+                                extraBonus2Pos.clear();
+                                isExtraBonus2Lines = false;
+                                extraBonus2Lines.clear();
 
-                            QList<QList<QPoint>> removeShapes;
-                            for (int i = 0; i < shapes.size(); i++)
-                                removeShapes << shapes[i];
-                            removeShapes << QList<QPoint>{QPoint(x, y)};
-                            removeBalls(removeShapes, RemoveType::Bonus);
-                        }
-                    });
-                    removeTimer.start(timerTick);
-                }
-            });
-            removeTimer.start(timerTick);
-        }
-        else if (balls[x][y].GetType() == Ball::ExtraBonus3)
-        {
-            isUseMouse = false;
-            // get near balls types
-            QSet<Ball::Type> typesSet;
-            if (x > 0)
-                typesSet << balls[x - 1][y].GetType();
-            if (x < fieldSize.width() - 1)
-                typesSet << balls[x + 1][y].GetType();
-            if (y > 0)
-                typesSet << balls[x][y - 1].GetType();
-            if (y < fieldSize.height() - 1)
-                typesSet << balls[x][y + 1].GetType();
-            // get types numbers
-            QList<Ball::Type> typesList = typesSet.toList();
-            QVector<int> lenghts(typesList.size());
-            for (int k = 0; k < typesList.size(); ++k)
+                                QList<QList<QPoint>> removeShapes;
+                                for (int i = 0; i < shapes.size(); i++)
+                                    removeShapes << shapes[i];
+                                removeShapes << QList<QPoint>{QPoint(x, y)};
+                                removeBalls(removeShapes, RemoveType::Bonus);
+                            }
+                        });
+                        removeTimer.start(timerTick);
+                    }
+                });
+                removeTimer.start(timerTick);
+            }
+            else if (balls[x][y].GetType() == Ball::ExtraBonus3)
             {
+                isUseMouse = false;
+                // get near balls types
+                QSet<Ball::Type> typesSet;
+                if (x > 0)
+                    typesSet << balls[x - 1][y].GetType();
+                if (x < fieldSize.width() - 1)
+                    typesSet << balls[x + 1][y].GetType();
+                if (y > 0)
+                    typesSet << balls[x][y - 1].GetType();
+                if (y < fieldSize.height() - 1)
+                    typesSet << balls[x][y + 1].GetType();
+                // get types numbers
+                QList<Ball::Type> typesList = typesSet.toList();
+                QVector<int> lenghts(typesList.size());
+                for (int k = 0; k < typesList.size(); ++k)
+                {
+                    for (int i = 0; i < fieldSize.width(); ++i)
+                    {
+                        for (int j = 0; j < fieldSize.height(); ++j)
+                        {
+                            if (balls[i][j].GetType() == typesList[k])
+                                lenghts[k]++;
+                        }
+                    }
+                }
+                // get type with maximum number
+                QVector<QPair<Ball::Type, int>> pairs;
+                for (int i = 0; i < typesList.size(); i++)
+                {
+                    pairs << QPair<Ball::Type, int>(typesList[i], lenghts[i]);
+                }
+                std::sort(pairs.begin(), pairs.end(), [=]
+                (const QPair<Ball::Type, int>& left, const QPair<Ball::Type, int>& right)
+                {
+                    return left.second > right.second;
+                });
+                QPair<Ball::Type, int> max = pairs[0];
+                // get points of type with maximum number
+                QList<QPoint> points;
+                points << QPoint(x, y);
                 for (int i = 0; i < fieldSize.width(); ++i)
                 {
                     for (int j = 0; j < fieldSize.height(); ++j)
                     {
-                        if (balls[i][j].GetType() == typesList[k])
-                            lenghts[k]++;
+                        if (balls[i][j].GetType() == max.first)
+                            points << QPoint(i, j);
                     }
                 }
-            }
-            // get type with maximum number
-            QVector<QPair<Ball::Type, int>> pairs;
-            for (int i = 0; i < typesList.size(); i++)
-            {
-                pairs << QPair<Ball::Type, int>(typesList[i], lenghts[i]);
-            }
-            std::sort(pairs.begin(), pairs.end(), [=]
-            (const QPair<Ball::Type, int>& left, const QPair<Ball::Type, int>& right)
-            {
-                return left.second > right.second;
-            });
-            QPair<Ball::Type, int> max = pairs[0];
-            // get points of type with maximum number
-            QList<QPoint> points;
-            points << QPoint(x, y);
-            for (int i = 0; i < fieldSize.width(); ++i)
-            {
-                for (int j = 0; j < fieldSize.height(); ++j)
+                // connect points to get closed contour without self-crosses
+                QPointF center;
+                for (int i = 0; i < points.size(); i++)
+                    center += points[i];
+                center /= points.size();
+                struct LineData
                 {
-                    if (balls[i][j].GetType() == max.first)
-                        points << QPoint(i, j);
+                    QPoint p;
+                    double angle;
+                    double length;
+                };
+                QList<LineData> lineData;
+                for (int i = 0; i < points.size(); i++)
+                {
+                    LineData data;
+                    data.p = points[i];
+                    data.angle = QLineF(center, points[i]).angle();
+                    data.length = QLineF(center, points[i]).length();
+                    lineData << data;
                 }
-            }
-            // connect points to get closed contour without self-crosses
-            QPointF center;
-            for (int i = 0; i < points.size(); i++)
-                center += points[i];
-            center /= points.size();
-            struct LineData
-            {
-                QPoint p;
-                double angle;
-                double length;
-            };
-            QList<LineData> lineData;
-            for (int i = 0; i < points.size(); i++)
-            {
-                LineData data;
-                data.p = points[i];
-                data.angle = QLineF(center, points[i]).angle();
-                data.length = QLineF(center, points[i]).length();
-                lineData << data;
-            }
-            std::sort(lineData.begin(), lineData.end(), [=] (LineData& left, LineData& right)
-            {
-                if (qFuzzyCompare(left.angle, right.angle))
-                    return left.length < right.length;
-                return left.angle < right.angle;
-            });
-            points.clear();
-            for (int i = 0; i < lineData.size(); i++)
-                points << lineData[i].p;
-            // 
-            int initialPos = points.indexOf(QPoint(x, y));
-            std::rotate(points.begin(), points.begin() + initialPos, points.end());
-            // initial polygon
-            QPolygonF polygon;
-            for (int i = 0; i < points.size(); i++)
-                polygon << QPoint(points[i].x() * ballSize + ballSize / 2,
-                    points[i].y() * ballSize + ballSize / 2);
-            QPainterPath path;
-            path.addPolygon(polygon);
-            path.closeSubpath();
-            path.setFillRule(Qt::FillRule::WindingFill);
-            eb3.path = path;
+                std::sort(lineData.begin(), lineData.end(), [=] (LineData& left, LineData& right)
+                {
+                    if (qFuzzyCompare(left.angle, right.angle))
+                        return left.length < right.length;
+                    return left.angle < right.angle;
+                });
+                points.clear();
+                for (int i = 0; i < lineData.size(); i++)
+                    points << lineData[i].p;
+                // 
+                int initialPos = points.indexOf(QPoint(x, y));
+                std::rotate(points.begin(), points.begin() + initialPos, points.end());
+                // initial polygon
+                QPolygonF polygon;
+                for (int i = 0; i < points.size(); i++)
+                    polygon << QPoint(points[i].x() * ballSize + ballSize / 2,
+                        points[i].y() * ballSize + ballSize / 2);
+                QPainterPath path;
+                path.addPolygon(polygon);
+                path.closeSubpath();
+                path.setFillRule(Qt::FillRule::WindingFill);
+                eb3.path = path;
 
-            eb3.transparent = 0;
-            eb3.pen = QPen(Qt::blue, ballSize / 10, Qt::SolidLine, Qt::RoundCap);
-            for (int i = 0; i < points.size(); i++)
-            {
-                eb3.lines << QLine(points[i].x() * ballSize + ballSize / 2,
-                    points[i].y() * ballSize + ballSize / 2,
-                    points[i].x() * ballSize + ballSize / 2,
-                    points[i].y() * ballSize + ballSize / 2);
-            }
-            int lenght = 10;
-            int lenghtCounter = 1;
-            int currentPoint = 0;
-            int linePos = 0;
-            // start animation
-            eb3.isStage1 = true;
-            connect(&removeTimer, &QTimer::timeout, this, [=] () mutable
-            {
-                QPoint p1 = points[currentPoint] * ballSize + QPoint(ballSize / 2, ballSize / 2);
-                QPoint p2 = points[currentPoint == points.size() - 1 ? 0 : currentPoint + 1] * ballSize + QPoint(ballSize / 2, ballSize / 2);
-                double x = ((double)p2.x() - p1.x()) / QLineF(p1, p2).length() * lenght * lenghtCounter;
-                double y = ((double)p2.y() - p1.y()) / QLineF(p1, p2).length() * lenght * lenghtCounter;
-                QPoint p = p1 + QPoint(qRound(x), qRound(y));
-                eb3.lines[currentPoint].setP2(p);
-                lenghtCounter++;
-                if (QLineF(eb3.lines[currentPoint]).length() > QLineF(p1, p2).length())
+                eb3.transparent = 0;
+                eb3.pen = QPen(Qt::blue, ballSize / 10, Qt::SolidLine, Qt::RoundCap);
+                for (int i = 0; i < points.size(); i++)
                 {
-                    currentPoint++;
-                    lenghtCounter = 1;
+                    eb3.lines << QLine(points[i].x() * ballSize + ballSize / 2,
+                        points[i].y() * ballSize + ballSize / 2,
+                        points[i].x() * ballSize + ballSize / 2,
+                        points[i].y() * ballSize + ballSize / 2);
                 }
-                if (currentPoint == points.size())
+                int lenght = 10;
+                int lenghtCounter = 1;
+                int currentPoint = 0;
+                int linePos = 0;
+                // start animation
+                eb3.isStage1 = true;
+                connect(&removeTimer, &QTimer::timeout, this, [=] () mutable
                 {
-                    removeTimer.stop();
-                    disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
-                    removeCounter = 0;
-                    eb3.isStage1 = false;
-                    eb3.isStage2 = true;
-                    connect(&removeTimer, &QTimer::timeout, this, [=] () mutable
+                    QPoint p1 = points[currentPoint] * ballSize + QPoint(ballSize / 2, ballSize / 2);
+                    QPoint p2 = points[currentPoint == points.size() - 1 ? 0 : currentPoint + 1] * ballSize + QPoint(ballSize / 2, ballSize / 2);
+                    double x = ((double)p2.x() - p1.x()) / QLineF(p1, p2).length() * lenght * lenghtCounter;
+                    double y = ((double)p2.y() - p1.y()) / QLineF(p1, p2).length() * lenght * lenghtCounter;
+                    QPoint p = p1 + QPoint(qRound(x), qRound(y));
+                    eb3.lines[currentPoint].setP2(p);
+                    lenghtCounter++;
+                    if (QLineF(eb3.lines[currentPoint]).length() > QLineF(p1, p2).length())
                     {
-                        eb3.transparent += 3;
-                        eb3.brush = QBrush(QColor(64, 64, 255, eb3.transparent));
-                        removeCounter++;
-                        if (removeCounter == 83)
+                        currentPoint++;
+                        lenghtCounter = 1;
+                    }
+                    if (currentPoint == points.size())
+                    {
+                        removeTimer.stop();
+                        disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+                        removeCounter = 0;
+                        eb3.isStage1 = false;
+                        eb3.isStage2 = true;
+                        connect(&removeTimer, &QTimer::timeout, this, [=] () mutable
                         {
-                            removeTimer.stop();
-                            disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
-                            removeCounter = 0;
-                            eb3.isStage2 = false;
-                            eb3.lines.clear();
-                            QList<QList<QPoint>> removeShapes;
-                            // add inner points
-                            for (int i = 0; i < fieldSize.width(); ++i)
+                            eb3.transparent += 3;
+                            eb3.brush = QBrush(QColor(64, 64, 255, eb3.transparent));
+                            removeCounter++;
+                            if (removeCounter == 83)
                             {
-                                for (int j = 0; j < fieldSize.height(); ++j)
+                                removeTimer.stop();
+                                disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
+                                removeCounter = 0;
+                                eb3.isStage2 = false;
+                                eb3.lines.clear();
+                                QList<QList<QPoint>> removeShapes;
+                                // add inner points
+                                for (int i = 0; i < fieldSize.width(); ++i)
                                 {
-                                    if (polygon.containsPoint(QPoint(i * ballSize + ballSize / 2,
-                                        j * ballSize + ballSize / 2), Qt::WindingFill))
-                                        points << QPoint(i, j);
+                                    for (int j = 0; j < fieldSize.height(); ++j)
+                                    {
+                                        if (polygon.containsPoint(QPoint(i * ballSize + ballSize / 2,
+                                            j * ballSize + ballSize / 2), Qt::WindingFill))
+                                            points << QPoint(i, j);
+                                    }
                                 }
+                                removeShapes << points;
+                                removeBalls(removeShapes, RemoveType::Bonus);
                             }
-                            removeShapes << points;
-                            removeBalls(removeShapes, RemoveType::Bonus);
-                        }
-                    });
-                    removeTimer.start(timerTick);
-                }
-            });
-            removeTimer.start(timerTick);
+                        });
+                        removeTimer.start(timerTick);
+                    }
+                });
+                removeTimer.start(timerTick);
+            }
         }
     }
 }
 
 void GameField::updateGameField()
 {
-    QPixmap pixmap(fieldSize.width() * ballSize, fieldSize.height() * ballSize);
-    pixmap.fill(Qt::white);
+    QPixmap pixmap(gameFieldSize);
     QPainter p(&pixmap);
     p.drawImage(QPoint(0, 0), background);
+    // score
+    p.setPen(QPen(Qt::white, 5));
+    p.setBrush(QBrush(Qt::gray));
+    p.drawRect(scoreArea);
+    p.translate(scoreArea.topLeft());
+    p.setFont(QFont("Arial", 30));
+    p.setPen(QPen(Qt::blue));
+    p.drawText(15, 60, QString::number(score));
+    // game field
+    p.translate(-scoreArea.topLeft());
+    p.setPen(QPen(Qt::white, 5));
+    p.drawRect(gameFieldArea);
+    p.translate(gameFieldArea.topLeft());
     // bonus 6
     if (b6.isStage1)
     {
@@ -717,7 +742,7 @@ void GameField::updateGameField()
         // keep rotation center
         p.drawImage(b6.rect.topLeft() - QPoint(imageCopy.rect().width() - b6.rect.width(), imageCopy.rect().height() - b6.rect.height()) / 2, imageCopy);
     }
-    // caps and selection
+    // balls and selection
     for (int i = 0; i < fieldSize.width(); ++i)
     {
         for (int j = 0; j < fieldSize.height(); ++j)
@@ -730,10 +755,11 @@ void GameField::updateGameField()
         }
     }
     // bonus 4
-    if (isBonus4)
+    if (b4.isActive)
     {
-        p.setPen(bonus4Pen);
-        p.drawEllipse(bonus4Rect);
+        p.setPen(b4.pen);
+        p.setBrush(b4.brush);
+        p.drawEllipse(b4.rect);
     }
     // bonus 5
     if (isBonus5)
@@ -800,6 +826,55 @@ void GameField::updateGameField()
             p.drawLine(eb3.lines[i]);
         p.drawPath(eb3.path);
     }
+    // extra bonuses
+    p.translate(-gameFieldArea.topLeft());
+    p.setPen(QPen(Qt::white, 5));
+    p.setBrush(QBrush(Qt::gray));
+    p.drawRect(extraBonusesArea);
+    p.translate(extraBonusesArea.topLeft());
+
+    auto drawExtraBonus = [&] (ExtraBonusProgress& ebp, QString& imageName, QPainter& painter)
+    {
+        QPixmap pixmap(ebp.rect.size());
+        pixmap.fill(Qt::transparent);
+        QPainter p(&pixmap);
+        p.setRenderHint(QPainter::Antialiasing);
+        QPainterPath path;
+        double progress = (double)ebp.value / ebp.maxValue * 360;
+        p.setPen(QPen(Qt::transparent));
+        p.setBrush(QBrush(QColor(192, 192, 255)));
+        // bonus is not filled; draw pie
+        if (progress < 360.0)
+        {
+            path.moveTo(pixmap.rect().adjusted(adjust, adjust, -adjust, -adjust).center());
+            path.arcTo(ebp.rect.adjusted(adjust, adjust, -adjust, -adjust), -90, -progress);
+            path.closeSubpath();
+            p.drawPath(path);
+        }
+        // bonus is filled; draw ellipse
+        else
+        {
+            p.drawEllipse(ebp.rect.adjusted(adjust, adjust, -adjust, -adjust));
+        }
+        // draw outer bonus image circle
+        p.setPen(QPen(QColor(64, 64, 255), 2));
+        p.setBrush(QBrush(Qt::transparent));
+        p.drawEllipse(ebp.rect.adjusted(adjust, adjust, -adjust, -adjust));
+        // draw bonus image background
+        p.setBrush(QBrush(QColor(128, 128, 255)));
+        p.drawEllipse(ebp.rect.adjusted(adjust * 3, adjust * 3, -adjust * 3, -adjust * 3));
+        // draw bonus image
+        QSvgRenderer r(imageName);
+        QImage image(50, 50, QImage::Format_ARGB32);
+        image.fill(Qt::transparent);
+        r.render(&p, QRectF(25, 25, 50, 50));
+        painter.drawPixmap(ebp.pos, pixmap);
+    };
+
+    drawExtraBonus(ebp1, QString(":/bonuses/Resources/bonuses/extra-1.svg"), p);
+    drawExtraBonus(ebp2, QString(":/bonuses/Resources/bonuses/extra-2.svg"), p);
+    drawExtraBonus(ebp3, QString(":/bonuses/Resources/bonuses/extra-3.svg"), p);
+    
     setPixmap(pixmap);
 }
 QList<QPoint> GameField::getShape(int x, int y)
@@ -956,14 +1031,20 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
     {
         sounds[Sound::RemoveBalls]->play();
         // update score
-        int prevScore = score;
+        prevScore = score;
         for (int i = 0; i < shapes.size(); i++)
         {
             score += (shapes[i].size() - 2) * 100;
         }
-        emit scoreChanged(score, prevScore);
+        // update extra bonus 1 stats
+        int delta = score - prevScore;
+        ebp1.value += delta;
+        if (ebp1.value >= ebp1.maxValue)
+        {
+            ebp1.value = ebp1.maxValue;
+        }
         // add bonuses
-        if (removeType == RemoveType::Cap)
+        if (removeType == RemoveType::Ball)
         {
             QVector<int> bonuses(3);
             for (int i = 0; i < shapes.size(); i++)
@@ -1095,7 +1176,7 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
                                 fillCounter = 0;
                                 fillTimer.stop();
                                 disconnect(&fillTimer, &QTimer::timeout, this, nullptr);
-                                removeBalls(getLineShapes(getShapes(balls)), RemoveType::Cap);
+                                removeBalls(getLineShapes(getShapes(balls)), RemoveType::Ball);
                             }
                         });
                         fillTimer.start(timerTick);
@@ -1109,10 +1190,10 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
     else
     {
         QList<PossibleMove> moves = getPossibleMoves();
-        // shuffle caps is there are no possible moves
+        // shuffle balls is there are no possible moves
         if (moves.isEmpty())
         {
-            shuffleCaps();
+            shuffleBalls();
         }
         isUseMouse = true;
     }
@@ -1163,7 +1244,7 @@ QList<GameField::PossibleMove> GameField::getPossibleMoves()
         {
             // create data copy
             QVector<QVector<Ball>> ballsCopy = balls;
-            // emulate caps exchange
+            // emulate balls exchange
             Ball::Type tmp = ballsCopy[i][j].GetType();
             ballsCopy[i][j].SetType(ballsCopy[i + 1][j].GetType());
             ballsCopy[i + 1][j].SetType(tmp);
@@ -1178,7 +1259,7 @@ QList<GameField::PossibleMove> GameField::getPossibleMoves()
                     return shapes1.size() > shapes2.size();
                 });
                 QList<QPoint> maxShape = shapes.first();
-                PossibleMove move(MoveType::Cap, QPoint(i, j), QPoint(i + 1, j), maxShape.size());
+                PossibleMove move(MoveType::Ball, QPoint(i, j), QPoint(i + 1, j), maxShape.size());
                 moves << move;
             }
         }
@@ -1190,7 +1271,7 @@ QList<GameField::PossibleMove> GameField::getPossibleMoves()
         {
             // create data copy
             QVector<QVector<Ball>> ballsCopy = balls;
-            // emulate caps exchange
+            // emulate balls exchange
             Ball::Type tmp = ballsCopy[i][j].GetType();
             ballsCopy[i][j].SetType(ballsCopy[i][j + 1].GetType());
             ballsCopy[i][j + 1].SetType(tmp);
@@ -1205,7 +1286,7 @@ QList<GameField::PossibleMove> GameField::getPossibleMoves()
                     return shapes1.size() > shapes2.size();
                 });
                 QList<QPoint> maxShape = shapes.first();
-                PossibleMove move(MoveType::Cap, QPoint(i, j), QPoint(i, j + 1), maxShape.size());
+                PossibleMove move(MoveType::Ball, QPoint(i, j), QPoint(i, j + 1), maxShape.size());
                 moves << move;
             }
         }
@@ -1218,7 +1299,7 @@ QList<GameField::PossibleMove> GameField::getPossibleMoves()
     });
     return moves;
 }
-void GameField::shuffleCaps()
+void GameField::shuffleBalls()
 {
     QList<QPoint> points;
     // fill points
@@ -1263,7 +1344,7 @@ void GameField::shuffleCaps()
     }
     while (!getLineShapes(getShapes(balls)).isEmpty() || getPossibleMoves().isEmpty());
 }
-QPoint GameField::getRandomCapPos()
+QPoint GameField::getRandomBallPos()
 {
     int x = 0;
     int y = 0;
@@ -1306,7 +1387,7 @@ void GameField::swapBalls(int x, int y)
                 // 
                 QList<QList<QPoint>> shapes = getLineShapes(getShapes(balls));
                 if (!shapes.empty())
-                    removeBalls(shapes, RemoveType::Cap);
+                    removeBalls(shapes, RemoveType::Ball);
                 else
                 {
                     sounds[Sound::WrongMove]->play();

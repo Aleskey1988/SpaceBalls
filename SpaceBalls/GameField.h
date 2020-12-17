@@ -15,14 +15,8 @@ public:
     GameField(QWidget *parent = Q_NULLPTR);
 
     void Test();
-    void CallExtraBonus1();
-    void CallExtraBonus2();
-    void CallExtraBonus3();
     void SetScore(int value) { score = value; }
     int GetScore() { return score; }
-
-signals:
-    void scoreChanged(int value, int prevValue);
 
 protected:
     void mousePressEvent(QMouseEvent* e);
@@ -30,9 +24,9 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* e);
 
 private:
-    enum MoveType
+    enum class MoveType
     {
-        Cap,
+        Ball,
         Bonus,
     };
     struct ChainBall
@@ -64,7 +58,7 @@ private:
     };
     enum class RemoveType
     {
-        Cap,
+        Ball,
         Bonus,
     };
 
@@ -76,8 +70,8 @@ private:
     QList<QPair<QPoint, QPoint>> getDropData();
     QImage SvgToImage(QString& fileName);
     QList<PossibleMove> getPossibleMoves();
-    void shuffleCaps();
-    QPoint getRandomCapPos();
+    void shuffleBalls();
+    QPoint getRandomBallPos();
     void swapBalls(int x, int y);
 
     Ui::GameField ui;
@@ -85,9 +79,13 @@ private:
     QVector<QVector<ChainBall>> chainBalls;
 
     QSize fieldSize = QSize(12, 8);
-    int ballSize = 71;
+    int ballSize = 51;
     double ballGapPercent = 0.07;
     int ballGap = ballSize * ballGapPercent;
+    QSize gameFieldSize = QSize(1000, 700);
+    QRect gameFieldArea = QRect(200, 25, fieldSize.width() * ballSize, fieldSize.height() * ballSize);
+    QRect scoreArea = QRect(25, 25, 150, 100);
+    QRect extraBonusesArea = QRect(850, 25, 125, 400);
     bool isFirstSelected = false;
     Ball* firstBall = nullptr;
     Ball* secondBall = nullptr;
@@ -110,9 +108,13 @@ private:
     QList<QSound*> sounds;
     QImage selectedImage;
 
-    bool isBonus4 = false;
-    QRect bonus4Rect;
-    QPen bonus4Pen;
+    struct Bonus4
+    {
+        bool isActive = false;
+        QRect rect;
+        QPen pen = QPen(QColor(255, 192, 0), 4);
+        QBrush brush = QBrush(Qt::transparent);
+    } b4;
 
     bool isBonus5 = false;
     QRect bonus5Rect;
@@ -159,7 +161,21 @@ private:
     } eb3;
 
     int timerTick = 5;
+    int fps = 60;
     int score = 0;
+    int prevScore = 0;
 
     bool isUseMouse = true;
+
+    struct ExtraBonusProgress
+    {
+        int value = 0;
+        int maxValue = 0;
+        QRect rect;
+        QPoint pos;
+    };
+    ExtraBonusProgress ebp1;
+    ExtraBonusProgress ebp2;
+    ExtraBonusProgress ebp3;
+    int adjust = 5;
 };
