@@ -120,7 +120,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
             // for debug purposes
             else if (e->button() == Qt::RightButton)
             {
-                balls[x][y].SetType(Ball::ExtraBonus1);
+                balls[x][y].SetType(Ball::Bonus5);
             }
         }
         // extra bonuses area
@@ -259,21 +259,25 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                 }
                 sounds[Sound::UseBonus5]->play();
 
-                bonus5Rect = QRect(QPoint(x * ballSize,
+                b5.rect = QRect(QPoint(x * ballSize,
                     y * ballSize), QSize(ballSize, ballSize));
-                isBonus5 = true;
-                int step = 3;
+                b5.isActive = true;
+                int step = 1;
+                int numSteps = ballSize * 2;
+                b5.opacity = 1;
+                double opacityStep = 0.5 / numSteps;
                 connect(&removeTimer, &QTimer::timeout, this, [=]
                 {
-                    bonus5Rect = bonus5Rect.adjusted(-step, -step, step, step);
+                    b5.rect.adjust(-step, -step, step, step);
+                    b5.opacity -= opacityStep;
                     removeCounter++;
-                    if (removeCounter == ballSize / 2)
+                    if (removeCounter == numSteps)
                     {
                         removeTimer.stop();
                         disconnect(&removeTimer, &QTimer::timeout, this, nullptr);
                         removeCounter = 0;
 
-                        isBonus5 = false;
+                        b5.isActive = false;
                         QList<QList<QPoint>> shapes;
                         shapes << shape;
                         removeBalls(shapes, RemoveType::Bonus);
@@ -795,15 +799,17 @@ void GameField::updateGameField()
     }
 
     // bonus 5
-    if (isBonus5)
+    if (b5.isActive)
     {
         QSvgRenderer r(QString(":/bonuses/Resources/bonuses/5.svg"));
-        QImage image(bonus5Rect.width() - ballGap * 2, bonus5Rect.height() - ballGap * 2, QImage::Format_ARGB32);
+        QImage image(b5.rect.width(), b5.rect.height(), QImage::Format_ARGB32);
         image.fill(Qt::transparent);
         QPainter painter(&image);
-        r.render(&painter, QRectF(0, 0, bonus5Rect.width() - ballGap * 2, bonus5Rect.height() - ballGap * 2));
-        p.drawImage(bonus5Rect.topLeft() + QPoint(ballGap, ballGap), image);
+        r.render(&painter, QRectF(0, 0, b5.rect.width(), b5.rect.height()));
+        p.setOpacity(b5.opacity);
+        p.drawImage(b5.rect.topLeft(), image);
     }
+    p.setOpacity(1);
 
     // extra bonus 1
     if (eb1.isStage1)
@@ -814,6 +820,7 @@ void GameField::updateGameField()
             QTransform matrix;
             matrix.rotate(360.0 - eb1.angles[i]);
             image = image.transformed(matrix, Qt::SmoothTransformation);
+            // keep rotation center
             p.drawImage(eb1.stage1CurPoints[i] - QPoint(image.rect().width() - ballSize, image.rect().height() - ballSize) / 2, image);
         }
     }

@@ -126,9 +126,12 @@ private:
         QBrush brush = QBrush(Qt::transparent);
     } b4;
 
-    bool isBonus5 = false;
-    QRect bonus5Rect;
-    double bonus5Transparent = 0.0;
+    struct Bonus5
+    {
+        bool isActive = false;
+        QRect rect;
+        double opacity = 0.0;
+    } b5;
 
     struct Bonus6
     {
