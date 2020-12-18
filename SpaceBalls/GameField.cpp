@@ -28,10 +28,10 @@ GameField::GameField(QWidget* parent)
     ebp1.maxValue = 10000;
     ebp1.rect = QRect(0, 0, 100, 100);
     ebp1.pos = QPoint((extraBonusesArea.width() - ebp1.rect.width()) / 2, (extraBonusesArea.width() - ebp1.rect.width()) / 2);
-    ebp2.maxValue = 10000;
+    ebp2.maxValue = 50;
     ebp2.rect = QRect(0, 0, 100, 100);
     ebp2.pos = QPoint((extraBonusesArea.width() - ebp2.rect.width()) / 2, (extraBonusesArea.width() - ebp2.rect.width()) / 2 + ebp2.rect.height());
-    ebp3.maxValue = 10000;
+    ebp3.maxValue = 50000;
     ebp3.rect = QRect(0, 0, 100, 100);
     ebp3.pos = QPoint((extraBonusesArea.width() - ebp3.rect.width()) / 2, (extraBonusesArea.width() - ebp3.rect.width()) / 2 + ebp3.rect.height() * 2);
 
@@ -126,6 +126,27 @@ void GameField::mousePressEvent(QMouseEvent* e)
         else if (extraBonusesArea.contains(pos))
         {
             pos -= extraBonusesArea.topLeft();
+            if (QRect(ebp1.pos, ebp1.rect.size()).contains(pos) &&
+                ebp1.value == ebp1.maxValue)
+            {
+                QPoint pos = getRandomBallPos();
+                balls[pos.x()][pos.y()].SetType(Ball::ExtraBonus1);
+                ebp1.value = 0;
+            }
+            else if (QRect(ebp2.pos, ebp2.rect.size()).contains(pos) &&
+                ebp2.value == ebp2.maxValue)
+            {
+                QPoint pos = getRandomBallPos();
+                balls[pos.x()][pos.y()].SetType(Ball::ExtraBonus2);
+                ebp2.value = 0;
+            }
+            else if (QRect(ebp3.pos, ebp3.rect.size()).contains(pos) &&
+                ebp3.value == ebp3.maxValue)
+            {
+                QPoint pos = getRandomBallPos();
+                balls[pos.x()][pos.y()].SetType(Ball::ExtraBonus3);
+                ebp3.value = 0;
+            }
         }
     }
 }
@@ -1043,10 +1064,20 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
         {
             ebp1.value = ebp1.maxValue;
         }
+        // update bonus 3 stats
+        if (removeType == RemoveType::Bonus)
+        {
+            ebp3.value += delta;
+            if (ebp3.value >= ebp3.maxValue)
+            {
+                ebp3.value = ebp3.maxValue;
+            }
+        }
         // add bonuses
         if (removeType == RemoveType::Ball)
         {
             QVector<int> bonuses(3);
+            // fill bonuses data
             for (int i = 0; i < shapes.size(); i++)
             {
                 if (shapes[i].size() == 4)
@@ -1055,6 +1086,14 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
                     bonuses[1]++;
                 else if (shapes[i].size() > 5)
                     bonuses[2]++;
+            }
+            // update extra bonus 2 stats
+            ebp2.value += bonuses[0];
+            ebp2.value += bonuses[1] * 2;
+            ebp2.value += bonuses[2] * 3;
+            if (ebp2.value >= ebp2.maxValue)
+            {
+                ebp2.value = ebp2.maxValue;
             }
             for (int i = 0; i < bonuses.size(); i++)
             {
