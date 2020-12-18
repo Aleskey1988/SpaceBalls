@@ -67,7 +67,7 @@ GameField::GameField(QWidget* parent)
     extraBonus2Textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2-top.svg"));
     extraBonus2Textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2-bottom.svg"));
 
-    selectedImage = SvgToImage(QString(":/misc/Resources/select.svg"));
+    selection = SvgToImage(QString(":/misc/Resources/select.svg"));
     // load sounds
     sounds << new QSound(":/sounds/Resources/sounds/remove-balls.wav");
     sounds << new QSound(":/sounds/Resources/sounds/wrong-move.wav");
@@ -83,6 +83,7 @@ GameField::GameField(QWidget* parent)
     music->setPlaylist(playlist);
     //music->play();
 
+    timer.setTimerType(Qt::TimerType::PreciseTimer);
     connect(&timer, &QTimer::timeout, this, &GameField::updateGameField);
     timer.start(1000 / fps);
 }
@@ -119,7 +120,7 @@ void GameField::mousePressEvent(QMouseEvent* e)
             // for debug purposes
             else if (e->button() == Qt::RightButton)
             {
-                balls[x][y].SetType(Ball::Bonus6);
+                balls[x][y].SetType(Ball::ExtraBonus1);
             }
         }
         // extra bonuses area
@@ -351,28 +352,28 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                     // left
                     if (side == 0)
                     {
-                        x = -1;
-                        y = qrand() % fieldSize.height();
+                        x = -ballSize;
+                        y = qrand() % gameFieldSize.height();
                     }
                     // right
                     else if (side == 1)
                     {
-                        x = fieldSize.width();
-                        y = qrand() % fieldSize.height();
+                        x = gameFieldSize.width() + ballSize;
+                        y = qrand() % gameFieldSize.height();
                     }
                     // top
                     else if (side == 2)
                     {
-                        x = qrand() % fieldSize.width();
-                        y = -1;
+                        x = qrand() % gameFieldSize.width();
+                        y = -ballSize;
                     }
                     // bottom
                     else if (side == 3)
                     {
-                        x = qrand() % fieldSize.width();
-                        y = fieldSize.height();
+                        x = qrand() % gameFieldSize.width();
+                        y = gameFieldSize.height() + ballSize;
                     }
-                    eb1.startPoints << QPointF(x, y) * ballSize;
+                    eb1.startPoints << QPointF(x, y) - gameFieldArea.topLeft();
                 }
                 eb1.stage1CurPoints = eb1.startPoints;
                 // fill rects destination positions on game field
@@ -382,6 +383,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                     eb1.endPoints << QPointF(pos) * ballSize;
                     // fill shape points
                     shape << pos;
+                    shape << QPoint(x, y);
                     if (pos.x() > 0 && pos.y() > 0)
                         shape << QPoint(pos.x() - 1, pos.y() - 1);
                     if (pos.x() < fieldSize.width() - 1 && pos.y() > 0)
@@ -396,12 +398,12 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                 // 
                 for (int i = 0; i < eb1.numMeteors; i++)
                 {
-                    eb1.meteorType << qrand() % 3;
-                    eb1.angles << QLineF(eb1.startPoints[i], eb1.endPoints[i]).angle();
+                    // 225 is texture angle
+                    eb1.angles << QLineF(eb1.startPoints[i], eb1.endPoints[i]).angle() - 225;
                 }
                 // start animation
                 eb1.isStage1 = true;
-                int numSteps = 250;
+                int numSteps = 350;
                 int curStep = 0;
                 connect(&removeTimer, &QTimer::timeout, this, [=] () mutable
                 {
@@ -436,6 +438,17 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                         double step = 1;
                         int numSteps = ballSize;
                         double opacityStep = step / numSteps;
+                        // fill meteors colors
+                        eb1.meteorsType.clear();
+                        for (int i = 0; i < eb1.numMeteors; i++)
+                        {
+                            QList<int> meteorType;
+                            for (int j = 0; j < 4; j++)
+                            {
+                                meteorType << qrand() % 3;
+                            }
+                            eb1.meteorsType << meteorType;
+                        }
                         connect(&removeTimer, &QTimer::timeout, this, [=]
                         {
                             for (int i = 0; i < eb1.endPoints.size(); i++)
@@ -455,8 +468,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                                 eb1.isStage2 = false;
                                 eb1.endPoints.clear();
                                 eb1.stage2CurPoints.clear();
-                                eb1.meteorType.clear();
-
+                                
                                 QList<QList<QPoint>> removeShapes;
                                 removeShapes << shape;
                                 removeBalls(removeShapes, RemoveType::Bonus);
@@ -737,6 +749,7 @@ void GameField::updateGameField()
     p.drawImage(QPoint(0, 0), background);
 
     // bonus 6
+    // draws under all items
     p.translate(gameFieldArea.topLeft());
     if (b6.isStage1)
     {
@@ -769,7 +782,7 @@ void GameField::updateGameField()
             p.drawImage(balls[i][j].GetRect().topLeft(), textures[balls[i][j].GetType()].scaled(balls[i][j].GetRect().size()));
             // selection
             if (balls[i][j].GetSelected())
-                p.drawImage(balls[i][j].GetRect().topLeft(), selectedImage.scaled(balls[i][j].GetRect().size()));
+                p.drawImage(balls[i][j].GetRect().topLeft(), selection.scaled(balls[i][j].GetRect().size()));
         }
     }
 
@@ -795,31 +808,33 @@ void GameField::updateGameField()
     // extra bonus 1
     if (eb1.isStage1)
     {
-        for (int i = 0; i < eb1.stage1CurPoints.size(); i++)
+        for (int i = 0; i < eb1.numMeteors; i++)
         {
-            QImage image = extraBonus1Textures[eb1.meteorType[i]];
+            QImage image = textures[Ball::ExtraBonus1];
             QTransform matrix;
             matrix.rotate(360.0 - eb1.angles[i]);
             image = image.transformed(matrix, Qt::SmoothTransformation);
-            p.drawImage(eb1.stage1CurPoints[i] - QPoint(image.width() * ballGapPercent, image.height() * ballGapPercent), image);
+            p.drawImage(eb1.stage1CurPoints[i] - QPoint(image.rect().width() - ballSize, image.rect().height() - ballSize) / 2, image);
         }
     }
     if (eb1.isStage2)
     {
         QList<double> angles {135, 225, 315, 45};
-        for (int i = 0; i < eb1.stage1CurPoints.size(); i++)
+        for (int i = 0; i < eb1.numMeteors; i++)
         {
-            for (int j = 0; j < eb1.stage2CurPoints[i].size(); j++)
+            for (int j = 0; j < 4; j++)
             {
-                QImage image = extraBonus1Textures[eb1.meteorType[i]];
+                QImage image = extraBonus1Textures[eb1.meteorsType[i][j]];
                 QTransform matrix;
                 matrix.rotate(360.0 - angles[j]);
                 image = image.transformed(matrix);
                 p.setOpacity(eb1.opacity);
-                p.drawImage(eb1.stage2CurPoints[i][j] - QPoint(image.width() * ballGapPercent, image.height() * ballGapPercent), image);
+                // keep rotation center
+                p.drawImage(eb1.stage2CurPoints[i][j] - QPoint(image.rect().width() - ballSize, image.rect().height() - ballSize) / 2, image);
             }
         }
     }
+    p.setOpacity(1);
 
     // extra bonus 2
     if (isExtraBonus2Pos)
@@ -858,7 +873,7 @@ void GameField::updateGameField()
     p.translate(scoreArea.topLeft());
     p.setFont(QFont("Arial", 30));
     p.setPen(QPen(Qt::blue));
-    p.drawText(15, 60, QString::number(score));
+    p.drawText(10, 60, QString::number(score));
     
     // extra bonuses
     p.translate(-scoreArea.topLeft());

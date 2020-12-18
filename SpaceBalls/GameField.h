@@ -99,17 +99,24 @@ private:
     QTimer dropTimer;
     QTimer fillTimer;
 
+    int fps = 60;
+    int timerTick = 5;
+
     int swapCounter = 0;
     int removeCounter = 0;
     int fillCounter = 0;
     int dropCounter = 0;
+
+    int score = 0;
+    int prevScore = 0;
+    bool isUseMouse = true;
 
     QImage background;
     QList<QImage> textures;
     QList<QImage> extraBonus1Textures;
     QList<QImage> extraBonus2Textures;
     QList<QSound*> sounds;
-    QImage selectedImage;
+    QImage selection;
 
     struct Bonus4
     {
@@ -137,11 +144,11 @@ private:
         QList<QPointF> startPoints;
         QList<QPointF> endPoints;
         QList<QPointF> stage1CurPoints;
-        QList<int> meteorType;
+        QList<QList<int>> meteorsType;
         QList<double> angles;
         QVector<QList<QPointF>> stage2CurPoints;
         double opacity = 0.0;
-        int numMeteors = 5;
+        int numMeteors = 7;
         double progress = 0;
     } eb1;
 
@@ -162,13 +169,6 @@ private:
         QBrush brush;
         double transparent = 0.0;
     } eb3;
-
-    int timerTick = 5;
-    int fps = 60;
-    int score = 0;
-    int prevScore = 0;
-
-    bool isUseMouse = true;
 
     struct ExtraBonusProgress
     {
