@@ -736,72 +736,8 @@ void GameField::updateGameField()
     QPainter p(&pixmap);
     p.drawImage(QPoint(0, 0), background);
 
-    // score
-    p.setPen(framePen);
-    p.setBrush(frameBrush);
-    p.drawRect(scoreArea);
-    p.translate(scoreArea.topLeft());
-    p.setFont(QFont("Arial", 30));
-    p.setPen(QPen(Qt::blue));
-    p.drawText(15, 60, QString::number(score));
-    
-    // extra bonuses
-    p.translate(-scoreArea.topLeft());
-    p.setPen(framePen);
-    p.setBrush(frameBrush);
-    p.drawRect(extraBonusesArea);
-    p.translate(extraBonusesArea.topLeft());
-
-    auto drawExtraBonus = [&] (ExtraBonusProgress& ebp, QString& imageName, QPainter& painter)
-    {
-        QPixmap pixmap(ebp.rect.size());
-        pixmap.fill(Qt::transparent);
-        QPainter p(&pixmap);
-        p.setRenderHint(QPainter::Antialiasing);
-        QPainterPath path;
-        double progress = (double)ebp.value / ebp.maxValue * 360;
-        p.setPen(QPen(Qt::transparent));
-        p.setBrush(QBrush(QColor(192, 192, 255)));
-        // bonus is not filled; draw pie
-        if (progress < 360.0)
-        {
-            path.moveTo(pixmap.rect().adjusted(adjust, adjust, -adjust, -adjust).center());
-            path.arcTo(ebp.rect.adjusted(adjust, adjust, -adjust, -adjust), -90, -progress);
-            path.closeSubpath();
-            p.drawPath(path);
-        }
-        // bonus is filled; draw ellipse
-        else
-        {
-            p.drawEllipse(ebp.rect.adjusted(adjust, adjust, -adjust, -adjust));
-        }
-        // draw outer bonus image circle
-        p.setPen(QPen(QColor(64, 64, 255), 2));
-        p.setBrush(QBrush(Qt::transparent));
-        p.drawEllipse(ebp.rect.adjusted(adjust, adjust, -adjust, -adjust));
-        // draw bonus image background
-        p.setBrush(QBrush(QColor(128, 128, 255)));
-        p.drawEllipse(ebp.rect.adjusted(adjust * 3, adjust * 3, -adjust * 3, -adjust * 3));
-        // draw bonus image
-        QSvgRenderer r(imageName);
-        QImage image(50, 50, QImage::Format_ARGB32);
-        image.fill(Qt::transparent);
-        r.render(&p, QRectF(25, 25, 50, 50));
-        painter.drawPixmap(ebp.pos, pixmap);
-    };
-
-    drawExtraBonus(ebp1, QString(":/bonuses/Resources/bonuses/extra-1.svg"), p);
-    drawExtraBonus(ebp2, QString(":/bonuses/Resources/bonuses/extra-2.svg"), p);
-    drawExtraBonus(ebp3, QString(":/bonuses/Resources/bonuses/extra-3.svg"), p);
-
-    // game field
-    p.translate(-extraBonusesArea.topLeft());
-    p.setPen(framePen);
-    p.setBrush(frameBrush);
-    p.drawRect(gameFieldArea);
-    p.translate(gameFieldArea.topLeft());
-
     // bonus 6
+    p.translate(gameFieldArea.topLeft());
     if (b6.isStage1)
     {
         QSvgRenderer r(QString(":/bonuses/Resources/bonuses/6.svg"));
@@ -816,6 +752,13 @@ void GameField::updateGameField()
         // keep rotation center
         p.drawImage(b6.rect.topLeft() - QPoint(imageCopy.rect().width() - b6.rect.width(), imageCopy.rect().height() - b6.rect.height()) / 2, imageCopy);
     }
+
+    // game field
+    p.translate(-gameFieldArea.topLeft());
+    p.setPen(framePen);
+    p.setBrush(frameBrush);
+    p.drawRect(gameFieldArea);
+    p.translate(gameFieldArea.topLeft());
 
     // balls and selection
     for (int i = 0; i < fieldSize.width(); ++i)
@@ -906,6 +849,66 @@ void GameField::updateGameField()
             p.drawLine(eb3.lines[i]);
         p.drawPath(eb3.path);
     }
+
+    // score
+    p.translate(-gameFieldArea.topLeft());
+    p.setPen(framePen);
+    p.setBrush(frameBrush);
+    p.drawRect(scoreArea);
+    p.translate(scoreArea.topLeft());
+    p.setFont(QFont("Arial", 30));
+    p.setPen(QPen(Qt::blue));
+    p.drawText(15, 60, QString::number(score));
+    
+    // extra bonuses
+    p.translate(-scoreArea.topLeft());
+    p.setPen(framePen);
+    p.setBrush(frameBrush);
+    p.drawRect(extraBonusesArea);
+    p.translate(extraBonusesArea.topLeft());
+
+    auto drawExtraBonus = [&] (ExtraBonusProgress& ebp, QString& imageName, QPainter& painter)
+    {
+        QPixmap pixmap(ebp.rect.size());
+        pixmap.fill(Qt::transparent);
+        QPainter p(&pixmap);
+        p.setRenderHint(QPainter::Antialiasing);
+        QPainterPath path;
+        double progress = (double)ebp.value / ebp.maxValue * 360;
+        p.setPen(QPen(Qt::transparent));
+        p.setBrush(QBrush(QColor(192, 192, 255)));
+        // bonus is not filled; draw pie
+        if (progress < 360.0)
+        {
+            path.moveTo(pixmap.rect().adjusted(adjust, adjust, -adjust, -adjust).center());
+            path.arcTo(ebp.rect.adjusted(adjust, adjust, -adjust, -adjust), -90, -progress);
+            path.closeSubpath();
+            p.drawPath(path);
+        }
+        // bonus is filled; draw ellipse
+        else
+        {
+            p.drawEllipse(ebp.rect.adjusted(adjust, adjust, -adjust, -adjust));
+        }
+        // draw outer bonus image circle
+        p.setPen(QPen(QColor(64, 64, 255), 2));
+        p.setBrush(QBrush(Qt::transparent));
+        p.drawEllipse(ebp.rect.adjusted(adjust, adjust, -adjust, -adjust));
+        // draw bonus image background
+        p.setBrush(QBrush(QColor(128, 128, 255)));
+        p.drawEllipse(ebp.rect.adjusted(adjust * 3, adjust * 3, -adjust * 3, -adjust * 3));
+        // draw bonus image
+        QSvgRenderer r(imageName);
+        QImage image(50, 50, QImage::Format_ARGB32);
+        image.fill(Qt::transparent);
+        r.render(&p, QRectF(25, 25, 50, 50));
+        painter.drawPixmap(ebp.pos, pixmap);
+    };
+
+    drawExtraBonus(ebp1, QString(":/bonuses/Resources/bonuses/extra-1.svg"), p);
+    drawExtraBonus(ebp2, QString(":/bonuses/Resources/bonuses/extra-2.svg"), p);
+    drawExtraBonus(ebp3, QString(":/bonuses/Resources/bonuses/extra-3.svg"), p);
+
     
     setPixmap(pixmap);
 }
