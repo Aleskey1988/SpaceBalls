@@ -735,122 +735,20 @@ void GameField::updateGameField()
     QPixmap pixmap(gameFieldSize);
     QPainter p(&pixmap);
     p.drawImage(QPoint(0, 0), background);
+
     // score
-    p.setPen(QPen(Qt::white, 5));
-    p.setBrush(QBrush(Qt::gray));
+    p.setPen(framePen);
+    p.setBrush(frameBrush);
     p.drawRect(scoreArea);
     p.translate(scoreArea.topLeft());
     p.setFont(QFont("Arial", 30));
     p.setPen(QPen(Qt::blue));
     p.drawText(15, 60, QString::number(score));
-    // game field
-    p.translate(-scoreArea.topLeft());
-    p.setPen(QPen(Qt::white, 5));
-    p.drawRect(gameFieldArea);
-    p.translate(gameFieldArea.topLeft());
-    // bonus 6
-    if (b6.isStage1)
-    {
-        QSvgRenderer r(QString(":/bonuses/Resources/bonuses/6.svg"));
-        QImage image(b6.rect.width(), b6.rect.width(), QImage::Format_ARGB32);
-        image.fill(Qt::transparent);
-        QPainter painter(&image);
-        r.render(&painter, QRectF(0, 0, b6.rect.width(), b6.rect.height()));
-        QTransform matrix;
-        matrix.rotate(b6.angle);
-        // TODO: crash if use image, not imageCopy
-        auto imageCopy = image.transformed(matrix, Qt::SmoothTransformation);
-        // keep rotation center
-        p.drawImage(b6.rect.topLeft() - QPoint(imageCopy.rect().width() - b6.rect.width(), imageCopy.rect().height() - b6.rect.height()) / 2, imageCopy);
-    }
-    // balls and selection
-    for (int i = 0; i < fieldSize.width(); ++i)
-    {
-        for (int j = 0; j < fieldSize.height(); ++j)
-        {
-            // common ball
-            p.drawImage(balls[i][j].GetRect().topLeft(), textures[balls[i][j].GetType()].scaled(balls[i][j].GetRect().size()));
-            // selection
-            if (balls[i][j].GetSelected())
-                p.drawImage(balls[i][j].GetRect().topLeft(), selectedImage.scaled(balls[i][j].GetRect().size()));
-        }
-    }
-    // bonus 4
-    if (b4.isActive)
-    {
-        p.setPen(b4.pen);
-        p.setBrush(b4.brush);
-        p.drawEllipse(b4.rect);
-    }
-    // bonus 5
-    if (isBonus5)
-    {
-        QSvgRenderer r(QString(":/bonuses/Resources/bonuses/5.svg"));
-        QImage image(bonus5Rect.width() - ballGap * 2, bonus5Rect.height() - ballGap * 2, QImage::Format_ARGB32);
-        image.fill(Qt::transparent);
-        QPainter painter(&image);
-        r.render(&painter, QRectF(0, 0, bonus5Rect.width() - ballGap * 2, bonus5Rect.height() - ballGap * 2));
-        p.drawImage(bonus5Rect.topLeft() + QPoint(ballGap, ballGap), image);
-    }
-    // extra bonus 1
-    if (eb1.isStage1)
-    {
-        for (int i = 0; i < eb1.stage1CurPoints.size(); i++)
-        {
-            QImage image = extraBonus1Textures[eb1.meteorType[i]];
-            QTransform matrix;
-            matrix.rotate(360.0 - eb1.angles[i]);
-            image = image.transformed(matrix, Qt::SmoothTransformation);
-            p.drawImage(eb1.stage1CurPoints[i] - QPoint(image.width() * ballGapPercent, image.height() * ballGapPercent), image);
-        }
-    }
-    if (eb1.isStage2)
-    {
-        QList<double> angles {135, 225, 315, 45};
-        for (int i = 0; i < eb1.stage1CurPoints.size(); i++)
-        {
-            for (int j = 0; j < eb1.stage2CurPoints[i].size(); j++)
-            {
-                QImage image = extraBonus1Textures[eb1.meteorType[i]];
-                QTransform matrix;
-                matrix.rotate(360.0 - angles[j]);
-                image = image.transformed(matrix);
-                p.setOpacity(eb1.opacity);
-                p.drawImage(eb1.stage2CurPoints[i][j] - QPoint(image.width() * ballGapPercent, image.height() * ballGapPercent), image);
-            }
-        }
-    }
-    // extra bonus 2
-    if (isExtraBonus2Pos)
-    {
-        for (int i = 0; i < extraBonus2Textures.size(); i++)
-            p.drawImage(extraBonus2Pos[i], extraBonus2Textures[i]);
-    }
-    if (isExtraBonus2Lines)
-    {
-        p.setPen(extraBonus2Pen);
-        for (int i = 0; i < extraBonus2Lines.size(); i++)
-            p.drawLine(extraBonus2Lines[i]);
-    }
-    // extra bonus 3
-    if (eb3.isStage1)
-    {
-        p.setPen(eb3.pen);
-        for (int i = 0; i < eb3.lines.size(); i++)
-            p.drawLine(eb3.lines[i]);
-    }
-    if (eb3.isStage2)
-    {
-        p.setPen(eb3.pen);
-        p.setBrush(eb3.brush);
-        for (int i = 0; i < eb3.lines.size(); i++)
-            p.drawLine(eb3.lines[i]);
-        p.drawPath(eb3.path);
-    }
+    
     // extra bonuses
-    p.translate(-gameFieldArea.topLeft());
-    p.setPen(QPen(Qt::white, 5));
-    p.setBrush(QBrush(Qt::gray));
+    p.translate(-scoreArea.topLeft());
+    p.setPen(framePen);
+    p.setBrush(frameBrush);
     p.drawRect(extraBonusesArea);
     p.translate(extraBonusesArea.topLeft());
 
@@ -895,6 +793,119 @@ void GameField::updateGameField()
     drawExtraBonus(ebp1, QString(":/bonuses/Resources/bonuses/extra-1.svg"), p);
     drawExtraBonus(ebp2, QString(":/bonuses/Resources/bonuses/extra-2.svg"), p);
     drawExtraBonus(ebp3, QString(":/bonuses/Resources/bonuses/extra-3.svg"), p);
+
+    // game field
+    p.translate(-extraBonusesArea.topLeft());
+    p.setPen(framePen);
+    p.setBrush(frameBrush);
+    p.drawRect(gameFieldArea);
+    p.translate(gameFieldArea.topLeft());
+
+    // bonus 6
+    if (b6.isStage1)
+    {
+        QSvgRenderer r(QString(":/bonuses/Resources/bonuses/6.svg"));
+        QImage image(b6.rect.width(), b6.rect.width(), QImage::Format_ARGB32);
+        image.fill(Qt::transparent);
+        QPainter painter(&image);
+        r.render(&painter, QRectF(0, 0, b6.rect.width(), b6.rect.height()));
+        QTransform matrix;
+        matrix.rotate(b6.angle);
+        // TODO: crash if use image, not imageCopy
+        auto imageCopy = image.transformed(matrix, Qt::SmoothTransformation);
+        // keep rotation center
+        p.drawImage(b6.rect.topLeft() - QPoint(imageCopy.rect().width() - b6.rect.width(), imageCopy.rect().height() - b6.rect.height()) / 2, imageCopy);
+    }
+
+    // balls and selection
+    for (int i = 0; i < fieldSize.width(); ++i)
+    {
+        for (int j = 0; j < fieldSize.height(); ++j)
+        {
+            // common ball
+            p.drawImage(balls[i][j].GetRect().topLeft(), textures[balls[i][j].GetType()].scaled(balls[i][j].GetRect().size()));
+            // selection
+            if (balls[i][j].GetSelected())
+                p.drawImage(balls[i][j].GetRect().topLeft(), selectedImage.scaled(balls[i][j].GetRect().size()));
+        }
+    }
+
+    // bonus 4
+    if (b4.isActive)
+    {
+        p.setPen(b4.pen);
+        p.setBrush(b4.brush);
+        p.drawEllipse(b4.rect);
+    }
+
+    // bonus 5
+    if (isBonus5)
+    {
+        QSvgRenderer r(QString(":/bonuses/Resources/bonuses/5.svg"));
+        QImage image(bonus5Rect.width() - ballGap * 2, bonus5Rect.height() - ballGap * 2, QImage::Format_ARGB32);
+        image.fill(Qt::transparent);
+        QPainter painter(&image);
+        r.render(&painter, QRectF(0, 0, bonus5Rect.width() - ballGap * 2, bonus5Rect.height() - ballGap * 2));
+        p.drawImage(bonus5Rect.topLeft() + QPoint(ballGap, ballGap), image);
+    }
+
+    // extra bonus 1
+    if (eb1.isStage1)
+    {
+        for (int i = 0; i < eb1.stage1CurPoints.size(); i++)
+        {
+            QImage image = extraBonus1Textures[eb1.meteorType[i]];
+            QTransform matrix;
+            matrix.rotate(360.0 - eb1.angles[i]);
+            image = image.transformed(matrix, Qt::SmoothTransformation);
+            p.drawImage(eb1.stage1CurPoints[i] - QPoint(image.width() * ballGapPercent, image.height() * ballGapPercent), image);
+        }
+    }
+    if (eb1.isStage2)
+    {
+        QList<double> angles {135, 225, 315, 45};
+        for (int i = 0; i < eb1.stage1CurPoints.size(); i++)
+        {
+            for (int j = 0; j < eb1.stage2CurPoints[i].size(); j++)
+            {
+                QImage image = extraBonus1Textures[eb1.meteorType[i]];
+                QTransform matrix;
+                matrix.rotate(360.0 - angles[j]);
+                image = image.transformed(matrix);
+                p.setOpacity(eb1.opacity);
+                p.drawImage(eb1.stage2CurPoints[i][j] - QPoint(image.width() * ballGapPercent, image.height() * ballGapPercent), image);
+            }
+        }
+    }
+
+    // extra bonus 2
+    if (isExtraBonus2Pos)
+    {
+        for (int i = 0; i < extraBonus2Textures.size(); i++)
+            p.drawImage(extraBonus2Pos[i], extraBonus2Textures[i]);
+    }
+    if (isExtraBonus2Lines)
+    {
+        p.setPen(extraBonus2Pen);
+        for (int i = 0; i < extraBonus2Lines.size(); i++)
+            p.drawLine(extraBonus2Lines[i]);
+    }
+
+    // extra bonus 3
+    if (eb3.isStage1)
+    {
+        p.setPen(eb3.pen);
+        for (int i = 0; i < eb3.lines.size(); i++)
+            p.drawLine(eb3.lines[i]);
+    }
+    if (eb3.isStage2)
+    {
+        p.setPen(eb3.pen);
+        p.setBrush(eb3.brush);
+        for (int i = 0; i < eb3.lines.size(); i++)
+            p.drawLine(eb3.lines[i]);
+        p.drawPath(eb3.path);
+    }
     
     setPixmap(pixmap);
 }

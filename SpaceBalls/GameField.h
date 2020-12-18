@@ -78,7 +78,7 @@ private:
     QVector<QVector<Ball>> balls;
     QVector<QVector<ChainBall>> chainBalls;
 
-    QSize fieldSize = QSize(12, 8);
+    QSize fieldSize = QSize(9, 9);
     int ballSize = 51;
     double ballGapPercent = 0.07;
     int ballGap = ballSize * ballGapPercent;
@@ -89,6 +89,9 @@ private:
     bool isFirstSelected = false;
     Ball* firstBall = nullptr;
     Ball* secondBall = nullptr;
+
+    QPen framePen = QPen(QColor(255, 255, 255, 160), 4);
+    QBrush frameBrush = QBrush(QColor(160, 160, 255, 64));
 
     QTimer timer;
     QTimer ballsSwapTimer;
