@@ -62,6 +62,7 @@ private:
         Bonus,
     };
 
+    void updateStartScreen();
     void updateGameField();
     QList<QPoint> getShape(int x, int y);
     QList<QList<QPoint>> getShapes(QVector<QVector<Ball>>& balls);
@@ -79,13 +80,21 @@ private:
     QVector<QVector<ChainBall>> chainBalls;
 
     QSize fieldSize = QSize(9, 9);
-    int ballSize = 51;
+    int ballSize = 61;
     double ballGapPercent = 0.07;
     int ballGap = ballSize * ballGapPercent;
-    QSize gameFieldSize = QSize(1000, 700);
-    QRect gameFieldArea = QRect(200, 25, fieldSize.width() * ballSize, fieldSize.height() * ballSize);
-    QRect scoreArea = QRect(25, 25, 150, 100);
-    QRect extraBonusesArea = QRect(850, 25, 125, 400);
+
+    int areaGap = 25;
+    QRect scoreArea = QRect(areaGap, areaGap, 150, 100);
+    QRect gameFieldArea = QRect(scoreArea.right() + areaGap, areaGap, fieldSize.width() * ballSize, fieldSize.height() * ballSize);
+    QRect extraBonusesArea = QRect(gameFieldArea.right() + areaGap, areaGap, 125, 400);
+    QSize gameFieldSize = QSize(extraBonusesArea.right() + areaGap, gameFieldArea.bottom() + areaGap * 3);
+
+    QSize logoSize = QSize(500, 150);
+    QRect logoRect = QRect(QPoint(gameFieldSize.width() / 2 - logoSize.width() / 2, gameFieldSize.height() / 3 - logoSize.height() / 2), logoSize);
+    QSize playButtonSize = QSize(240, 80);
+    QRect playButtonRect = QRect(QPoint(gameFieldSize.width() / 2 - playButtonSize.width() / 2, gameFieldSize.height() * 2 / 3 - playButtonSize.height() / 2), playButtonSize);
+
     bool isFirstSelected = false;
     Ball* firstBall = nullptr;
     Ball* secondBall = nullptr;
@@ -93,7 +102,8 @@ private:
     QPen framePen = QPen(QColor(255, 255, 255, 160), 4);
     QBrush frameBrush = QBrush(QColor(160, 160, 255, 64));
 
-    QTimer timer;
+    QTimer updateStartScreenTimer;
+    QTimer updateGameFieldTimer;
     QTimer ballsSwapTimer;
     QTimer removeTimer;
     QTimer dropTimer;
@@ -111,7 +121,8 @@ private:
     int prevScore = 0;
     bool isUseMouse = true;
 
-    QImage background;
+    QImage startScreenBackground;
+    QImage gameFieldBackground;
     QList<QImage> textures;
     QList<QImage> extraBonus1Textures;
     QList<QImage> extraBonus2Textures;
@@ -184,4 +195,12 @@ private:
     ExtraBonusProgress ebp2;
     ExtraBonusProgress ebp3;
     int adjust = 5;
+
+    enum class GameMode
+    {
+        StartScreen,
+        Game,
+    };
+
+    GameMode gameMode = GameMode::StartScreen;
 };
