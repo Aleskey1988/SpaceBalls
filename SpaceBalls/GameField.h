@@ -21,6 +21,7 @@ public:
 protected:
     void mousePressEvent(QMouseEvent* e);
     void mouseMoveEvent(QMouseEvent* e);
+    void mouseReleaseEvent(QMouseEvent* e);
     void mouseDoubleClickEvent(QMouseEvent* e);
 
 private:
@@ -84,16 +85,21 @@ private:
     double ballGapPercent = 0.07;
     int ballGap = ballSize * ballGapPercent;
 
+    QSize gameFieldSize = QSize(1280, 720);
     int areaGap = 25;
-    QRect scoreArea = QRect(areaGap, areaGap, 150, 100);
-    QRect gameFieldArea = QRect(scoreArea.right() + areaGap, areaGap, fieldSize.width() * ballSize, fieldSize.height() * ballSize);
-    QRect extraBonusesArea = QRect(gameFieldArea.right() + areaGap, areaGap, 125, 400);
-    QSize gameFieldSize = QSize(extraBonusesArea.right() + areaGap, gameFieldArea.bottom() + areaGap * 3);
+    QRect scoreRect = QRect(areaGap, areaGap, 150, 100);
+    QRect extraBonusesRect = QRect(gameFieldSize.width() - 125 - areaGap, areaGap, 125, 400);
+    QRect gameFieldRect = QRect(scoreRect.right() + (extraBonusesRect.left() - scoreRect.right()) / 2 - (fieldSize.width() * ballSize) / 2, areaGap, fieldSize.width() * ballSize, fieldSize.height() * ballSize);
 
     QSize logoSize = QSize(500, 150);
     QRect logoRect = QRect(QPoint(gameFieldSize.width() / 2 - logoSize.width() / 2, gameFieldSize.height() / 3 - logoSize.height() / 2), logoSize);
     QSize playButtonSize = QSize(240, 80);
     QRect playButtonRect = QRect(QPoint(gameFieldSize.width() / 2 - playButtonSize.width() / 2, gameFieldSize.height() * 2 / 3 - playButtonSize.height() / 2), playButtonSize);
+    double startScreenBackgroundOpacity = 1;
+    double gameFieldBackgroundOpacity = 0;
+    double logoAndPlayButtonOpacity = 1;
+    bool drawGameFieldRect = false;
+    bool drawBalls = false;
 
     bool isFirstSelected = false;
     Ball* firstBall = nullptr;
@@ -108,6 +114,9 @@ private:
     QTimer removeTimer;
     QTimer dropTimer;
     QTimer fillTimer;
+    QTimer timerOne;
+    QTimer timerTwo;
+    QTimer timerThree;
 
     int fps = 60;
     int timerTick = 5;
@@ -116,6 +125,9 @@ private:
     int removeCounter = 0;
     int fillCounter = 0;
     int dropCounter = 0;
+    int timerOneCounter = 0;
+    int timerTwoCounter = 0;
+    int timerThreeCounter = 0;
 
     int score = 0;
     int prevScore = 0;
@@ -203,4 +215,14 @@ private:
     };
 
     GameMode gameMode = GameMode::StartScreen;
+
+    QScopedPointer<QMediaPlaylist> playlist;
+    QScopedPointer<QMediaPlayer> player;
+
+    enum Music
+    {
+        StartScreen,
+        Level1,
+        Level2,
+    };
 };

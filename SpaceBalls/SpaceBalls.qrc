@@ -31,9 +31,9 @@
     </qresource>
     <qresource prefix="/misc">
         <file>Resources/select.svg</file>
-        <file>Resources/space.jpg</file>
         <file>Resources/logo.svg</file>
         <file>Resources/button-play.svg</file>
-        <file>Resources/start-screen.png</file>
+        <file>Resources/background-1.bmp</file>
+        <file>Resources/background-start.bmp</file>
     </qresource>
 </RCC>

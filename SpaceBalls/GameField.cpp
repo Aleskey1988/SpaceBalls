@@ -28,13 +28,13 @@ GameField::GameField(QWidget* parent)
 
     ebp1.maxValue = 10000;
     ebp1.rect = QRect(0, 0, 100, 100);
-    ebp1.pos = QPoint((extraBonusesArea.width() - ebp1.rect.width()) / 2, (extraBonusesArea.width() - ebp1.rect.width()) / 2);
-    ebp2.maxValue = 50;
+    ebp1.pos = QPoint((extraBonusesRect.width() - ebp1.rect.width()) / 2, (extraBonusesRect.width() - ebp1.rect.width()) / 2);
+    ebp2.maxValue = 30000;
     ebp2.rect = QRect(0, 0, 100, 100);
-    ebp2.pos = QPoint((extraBonusesArea.width() - ebp2.rect.width()) / 2, (extraBonusesArea.width() - ebp2.rect.width()) / 2 + ebp2.rect.height());
-    ebp3.maxValue = 50000;
+    ebp2.pos = QPoint((extraBonusesRect.width() - ebp2.rect.width()) / 2, (extraBonusesRect.width() - ebp2.rect.width()) / 2 + ebp2.rect.height());
+    ebp3.maxValue = 20;
     ebp3.rect = QRect(0, 0, 100, 100);
-    ebp3.pos = QPoint((extraBonusesArea.width() - ebp3.rect.width()) / 2, (extraBonusesArea.width() - ebp3.rect.width()) / 2 + ebp3.rect.height() * 2);
+    ebp3.pos = QPoint((extraBonusesRect.width() - ebp3.rect.width()) / 2, (extraBonusesRect.width() - ebp3.rect.width()) / 2 + ebp3.rect.height() * 2);
 
     // debug
     //balls[0][0].SetType(Ball::Ball6);
@@ -43,8 +43,9 @@ GameField::GameField(QWidget* parent)
     //balls[0][3].SetType(Ball::Ball6);
     //balls[0][4].SetType(Ball::Ball6);
 
-    startScreenBackground = QImage(":/misc/Resources/start-screen.png").scaled(gameFieldSize);
-    gameFieldBackground = QImage(":/misc/Resources/space.jpg").scaled(gameFieldSize);
+    startScreenBackground = QImage(":/misc/Resources/background-start.bmp").scaled(gameFieldSize);
+    gameFieldBackground = QImage(":/misc/Resources/background-1.bmp").scaled(gameFieldSize);
+
     // convert SVG rextures to QImage
     textures << SvgToImage(QString(":/caps/Resources/caps/01-saturn.svg"));
     textures << SvgToImage(QString(":/caps/Resources/caps/02-jupiter.svg"));
@@ -77,14 +78,18 @@ GameField::GameField(QWidget* parent)
     sounds << new QSound(":/sounds/Resources/sounds/use-bonus-5.wav");
     sounds << new QSound(":/sounds/Resources/sounds/use-bonus-6.wav");
 
-    QMediaPlaylist* playlist = new QMediaPlaylist();
-    playlist->addMedia(QUrl("Resources/playlist/DST-Aircord.mp3"));
+    // load music
+    playlist.reset(new QMediaPlaylist());
+    //playlist->addMedia(QUrl::fromLocalFile("Resources/playlist/menu_music.mp3"));
+    //playlist->addMedia(QUrl::fromLocalFile("Resources/playlist/DST-Aircord.mp3"));
+    //playlist->addMedia(QUrl::fromLocalFile("Resources/playlist/Galaxy Map Theme (Mass Effect).mp3"));
     playlist->setPlaybackMode(QMediaPlaylist::Loop);
-    playlist->shuffle();
-    QMediaPlayer* music = new QMediaPlayer();
-    music->setPlaylist(playlist);
-    //music->play();
+    //playlist->shuffle();
+    player.reset(new QMediaPlayer());
+    player->setPlaylist(playlist.data());
 
+    playlist->setCurrentIndex(Music::StartScreen);
+    player->play();
     updateStartScreenTimer.setTimerType(Qt::TimerType::PreciseTimer);
     connect(&updateStartScreenTimer, &QTimer::timeout, this, &GameField::updateStartScreen);
     updateStartScreenTimer.start(1000 / fps);
@@ -100,26 +105,12 @@ void GameField::mousePressEvent(QMouseEvent* e)
     if (isUseMouse)
     {
         QPoint pos = e->pos();
-        if (gameMode == GameMode::StartScreen)
-        {
-            // play button
-            if (playButtonRect.contains(pos))
-            {
-                updateStartScreenTimer.stop();
-                disconnect(&updateStartScreenTimer, &QTimer::timeout, this, nullptr);
-
-                gameMode = GameMode::Game;
-                updateGameFieldTimer.setTimerType(Qt::TimerType::PreciseTimer);
-                connect(&updateGameFieldTimer, &QTimer::timeout, this, &GameField::updateGameField);
-                updateGameFieldTimer.start(1000 / fps);
-            }
-        }
-        else if (gameMode == GameMode::Game)
+        if (gameMode == GameMode::Game)
         {
             // game field area
-            if (gameFieldArea.contains(pos))
+            if (gameFieldRect.contains(pos))
             {
-                pos -= gameFieldArea.topLeft();
+                pos -= gameFieldRect.topLeft();
                 int x = pos.x() / ballSize;
                 int y = pos.y() / ballSize;
                 if (e->button() == Qt::LeftButton)
@@ -142,9 +133,9 @@ void GameField::mousePressEvent(QMouseEvent* e)
                 }
             }
             // extra bonuses area
-            else if (extraBonusesArea.contains(pos))
+            else if (extraBonusesRect.contains(pos))
             {
-                pos -= extraBonusesArea.topLeft();
+                pos -= extraBonusesRect.topLeft();
                 if (QRect(ebp1.pos, ebp1.rect.size()).contains(pos) &&
                     ebp1.value == ebp1.maxValue)
                 {
@@ -176,9 +167,9 @@ void GameField::mouseMoveEvent(QMouseEvent* e)
     {
         QPoint pos = e->pos();
         // game field area
-        if (gameFieldArea.contains(pos))
+        if (gameFieldRect.contains(pos))
         {
-            pos -= gameFieldArea.topLeft();
+            pos -= gameFieldRect.topLeft();
             int x = pos.x() / ballSize;
             int y = pos.y() / ballSize;
             if (firstBall != nullptr)
@@ -195,15 +186,91 @@ void GameField::mouseMoveEvent(QMouseEvent* e)
         }
     }
 }
+void GameField::mouseReleaseEvent(QMouseEvent* e)
+{
+    if (isUseMouse)
+    {
+        QPoint pos = e->pos();
+        if (gameMode == GameMode::StartScreen)
+        {
+            // play button
+            if (playButtonRect.contains(pos))
+            {
+                // go to game field screen
+                connect(&timerOne, &QTimer::timeout, this, [=]
+                {
+                    logoRect.adjust(0, -2, 0, -2);
+                    playButtonRect.adjust(0, 2, 0, 2);
+                    startScreenBackgroundOpacity -= 0.005;
+                    gameFieldBackgroundOpacity += 0.005;
+                    logoAndPlayButtonOpacity -= 0.005;
+                    timerOneCounter += 1;
+                    if (timerOneCounter == 170)
+                    {
+                        timerOne.stop();
+                        disconnect(&timerOne, &QTimer::timeout, this, nullptr);
+                        timerOneCounter = 0;
+                        // play score and extra bonuses rects animation
+                        updateStartScreenTimer.stop();
+                        disconnect(&updateStartScreenTimer, &QTimer::timeout, this, nullptr);
+                        player->stop();
+                        scoreRect = scoreRect.adjusted(-200, 0, -200, 0);
+                        extraBonusesRect = extraBonusesRect.adjusted(200, 0, 200, 0);
+                        connect(&timerTwo, &QTimer::timeout, this, [=]
+                        {
+                            scoreRect.adjust(2, 0, 2, 0);
+                            extraBonusesRect.adjust(-2, 0, -2, 0);
+                            timerTwoCounter += 1;
+                            if (timerTwoCounter == 100)
+                            {
+                                timerTwo.stop();
+                                disconnect(&timerTwo, &QTimer::timeout, this, nullptr);
+                                timerTwoCounter = 0;
+                                // play game field rect animation
+                                int maxValue = gameFieldRect.width() / 4;
+                                gameFieldRect = QRect(
+                                    QPoint(gameFieldRect.left() + gameFieldRect.width() / 2, gameFieldRect.top()),
+                                    QSize(1, gameFieldRect.height()));
+                                drawGameFieldRect = true;
+                                connect(&timerThree, &QTimer::timeout, this, [=]
+                                {
+                                    gameFieldRect.adjust(-2, 0, 2, 0);
+                                    timerThreeCounter += 1;
+                                    if (timerThreeCounter == maxValue)
+                                    {
+                                        timerThree.stop();
+                                        disconnect(&timerThree, &QTimer::timeout, this, nullptr);
+                                        timerThreeCounter = 0;
+                                        // start the game
+                                        gameMode = GameMode::Game;
+                                        drawBalls = true;
+                                    }
+                                });
+                                timerThree.start(timerTick);
+                            }
+                        });
+                        timerTwo.start(timerTick);
+                        updateGameFieldTimer.setTimerType(Qt::TimerType::PreciseTimer);
+                        connect(&updateGameFieldTimer, &QTimer::timeout, this, &GameField::updateGameField);
+                        updateGameFieldTimer.start(1000 / fps);
+                        playlist->setCurrentIndex(Music::Level1);
+                        player->play();
+                    }
+                });
+                timerOne.start(timerTick);
+            }
+        }
+    }
+}
 void GameField::mouseDoubleClickEvent(QMouseEvent* e)
 {
     if (isUseMouse)
     {
         QPoint pos = e->pos();
         // game field area
-        if (gameFieldArea.contains(pos))
+        if (gameFieldRect.contains(pos))
         {
-            pos -= gameFieldArea.topLeft();
+            pos -= gameFieldRect.topLeft();
             int x = pos.x() / ballSize;
             int y = pos.y() / ballSize;
             balls[x][y].SetSelected(false);
@@ -396,7 +463,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                         x = qrand() % gameFieldSize.width();
                         y = gameFieldSize.height() + ballSize;
                     }
-                    eb1.startPoints << QPointF(x, y) - gameFieldArea.topLeft();
+                    eb1.startPoints << QPointF(x, y) - gameFieldRect.topLeft();
                 }
                 eb1.stage1CurPoints = eb1.startPoints;
                 // fill rects destination positions on game field
@@ -491,7 +558,7 @@ void GameField::mouseDoubleClickEvent(QMouseEvent* e)
                                 eb1.isStage2 = false;
                                 eb1.endPoints.clear();
                                 eb1.stage2CurPoints.clear();
-                                
+
                                 QList<QList<QPoint>> removeShapes;
                                 removeShapes << shape;
                                 removeBalls(removeShapes, RemoveType::Bonus);
@@ -769,7 +836,11 @@ void GameField::updateStartScreen()
 {
     QPixmap pixmap(gameFieldSize);
     QPainter p(&pixmap);
+    p.setOpacity(startScreenBackgroundOpacity);
     p.drawImage(QPoint(0, 0), startScreenBackground);
+    p.setOpacity(gameFieldBackgroundOpacity);
+    p.drawImage(QPoint(0, 0), gameFieldBackground);
+    p.setOpacity(1);
 
     // logo
     QSvgRenderer rLogo(QString(":/misc/Resources/logo.svg"));
@@ -777,7 +848,9 @@ void GameField::updateStartScreen()
     logo.fill(Qt::transparent);
     QPainter painterLogo(&logo);
     rLogo.render(&painterLogo, QRectF(QPoint(0, 0), logoSize));
+    p.setOpacity(logoAndPlayButtonOpacity);
     p.drawPixmap(logoRect, logo);
+    p.setOpacity(1);
 
     // play button
     QSvgRenderer rPlayButton(QString(":/misc/Resources/button-play.svg"));
@@ -785,6 +858,7 @@ void GameField::updateStartScreen()
     playButton.fill(Qt::transparent);
     QPainter painterPlayButton(&playButton);
     rPlayButton.render(&painterPlayButton, QRectF(QPoint(0, 0), playButtonSize));
+    p.setOpacity(logoAndPlayButtonOpacity);
     p.drawPixmap(playButtonRect, playButton);
 
     setPixmap(pixmap);
@@ -793,11 +867,13 @@ void GameField::updateGameField()
 {
     QPixmap pixmap(gameFieldSize);
     QPainter p(&pixmap);
+    p.setOpacity(gameFieldBackgroundOpacity);
     p.drawImage(QPoint(0, 0), gameFieldBackground);
+    p.setOpacity(1);
 
     // bonus 6
     // draws under all items
-    p.translate(gameFieldArea.topLeft());
+    p.translate(gameFieldRect.topLeft());
     if (b6.isStage1)
     {
         QSvgRenderer r(QString(":/bonuses/Resources/bonuses/6.svg"));
@@ -813,23 +889,29 @@ void GameField::updateGameField()
         p.drawImage(b6.rect.topLeft() - QPoint(imageCopy.rect().width() - b6.rect.width(), imageCopy.rect().height() - b6.rect.height()) / 2, imageCopy);
     }
 
-    // game field
-    p.translate(-gameFieldArea.topLeft());
-    p.setPen(framePen);
-    p.setBrush(frameBrush);
-    p.drawRect(gameFieldArea);
-    p.translate(gameFieldArea.topLeft());
-
-    // balls and selection
-    for (int i = 0; i < fieldSize.width(); ++i)
+    if (drawGameFieldRect)
     {
-        for (int j = 0; j < fieldSize.height(); ++j)
+        // game field
+        p.translate(-gameFieldRect.topLeft());
+        p.setPen(framePen);
+        p.setBrush(frameBrush);
+        p.drawRect(gameFieldRect);
+        p.translate(gameFieldRect.topLeft());
+
+        // balls and selection
+        if (drawBalls)
         {
-            // common ball
-            p.drawImage(balls[i][j].GetRect().topLeft(), textures[balls[i][j].GetType()].scaled(balls[i][j].GetRect().size()));
-            // selection
-            if (balls[i][j].GetSelected())
-                p.drawImage(balls[i][j].GetRect().topLeft(), selection.scaled(balls[i][j].GetRect().size()));
+            for (int i = 0; i < fieldSize.width(); ++i)
+            {
+                for (int j = 0; j < fieldSize.height(); ++j)
+                {
+                    // common ball
+                    p.drawImage(balls[i][j].GetRect().topLeft(), textures[balls[i][j].GetType()].scaled(balls[i][j].GetRect().size()));
+                    // selection
+                    if (balls[i][j].GetSelected())
+                        p.drawImage(balls[i][j].GetRect().topLeft(), selection.scaled(balls[i][j].GetRect().size()));
+                }
+            }
         }
     }
 
@@ -916,21 +998,21 @@ void GameField::updateGameField()
     }
 
     // score
-    p.translate(-gameFieldArea.topLeft());
+    p.translate(-gameFieldRect.topLeft());
     p.setPen(framePen);
     p.setBrush(frameBrush);
-    p.drawRect(scoreArea);
-    p.translate(scoreArea.topLeft());
+    p.drawRect(scoreRect);
+    p.translate(scoreRect.topLeft());
     p.setFont(QFont("Arial", 30));
     p.setPen(QPen(Qt::white));
     p.drawText(10, 60, QString::number(score));
-    
+
     // extra bonuses
-    p.translate(-scoreArea.topLeft());
+    p.translate(-scoreRect.topLeft());
     p.setPen(framePen);
     p.setBrush(frameBrush);
-    p.drawRect(extraBonusesArea);
-    p.translate(extraBonusesArea.topLeft());
+    p.drawRect(extraBonusesRect);
+    p.translate(extraBonusesRect.topLeft());
 
     auto drawExtraBonus = [&] (ExtraBonusProgress& ebp, QString& imageName, QPainter& painter)
     {
@@ -974,7 +1056,7 @@ void GameField::updateGameField()
     drawExtraBonus(ebp2, QString(":/bonuses/Resources/bonuses/extra-2.svg"), p);
     drawExtraBonus(ebp3, QString(":/bonuses/Resources/bonuses/extra-3.svg"), p);
 
-    
+
     setPixmap(pixmap);
 }
 QList<QPoint> GameField::getShape(int x, int y)
@@ -1143,13 +1225,13 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
         {
             ebp1.value = ebp1.maxValue;
         }
-        // update bonus 3 stats
+        // update bonus 2 stats
         if (removeType == RemoveType::Bonus)
         {
-            ebp3.value += delta;
-            if (ebp3.value >= ebp3.maxValue)
+            ebp2.value += delta;
+            if (ebp2.value >= ebp2.maxValue)
             {
-                ebp3.value = ebp3.maxValue;
+                ebp2.value = ebp2.maxValue;
             }
         }
         // add bonuses
@@ -1166,13 +1248,13 @@ void GameField::removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType)
                 else if (shapes[i].size() > 5)
                     bonuses[2]++;
             }
-            // update extra bonus 2 stats
-            ebp2.value += bonuses[0];
-            ebp2.value += bonuses[1] * 2;
-            ebp2.value += bonuses[2] * 3;
-            if (ebp2.value >= ebp2.maxValue)
+            // update extra bonus 3 stats
+            ebp3.value += bonuses[0];
+            ebp3.value += bonuses[1] * 2;
+            ebp3.value += bonuses[2] * 3;
+            if (ebp3.value >= ebp3.maxValue)
             {
-                ebp2.value = ebp2.maxValue;
+                ebp3.value = ebp3.maxValue;
             }
             for (int i = 0; i < bonuses.size(); i++)
             {
