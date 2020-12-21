@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30611.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpaceBalls", "SpaceBalls\SpaceBalls.vcxproj", "{1F0071BD-22C0-4662-9C6D-84CF92573129}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Launcher", "Launcher\Launcher.vcxproj", "{3AEC5AED-D5FD-4FD4-8AE2-129A0F684F0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -15,6 +17,10 @@ Global
 		{1F0071BD-22C0-4662-9C6D-84CF92573129}.Debug|x64.Build.0 = Debug|x64
 		{1F0071BD-22C0-4662-9C6D-84CF92573129}.Release|x64.ActiveCfg = Release|x64
 		{1F0071BD-22C0-4662-9C6D-84CF92573129}.Release|x64.Build.0 = Release|x64
+		{3AEC5AED-D5FD-4FD4-8AE2-129A0F684F0B}.Debug|x64.ActiveCfg = Debug|x64
+		{3AEC5AED-D5FD-4FD4-8AE2-129A0F684F0B}.Debug|x64.Build.0 = Debug|x64
+		{3AEC5AED-D5FD-4FD4-8AE2-129A0F684F0B}.Release|x64.ActiveCfg = Release|x64
+		{3AEC5AED-D5FD-4FD4-8AE2-129A0F684F0B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
