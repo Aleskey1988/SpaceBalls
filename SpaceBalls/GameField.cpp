@@ -4,7 +4,6 @@ GameField::GameField(QWidget* parent)
     : QLabel(parent)
 {
     ui.setupUi(this);
-    setFixedSize(gameFieldSize);
 
     setMouseTracking(true);
 
@@ -25,6 +24,25 @@ GameField::GameField(QWidget* parent)
         }
     }
     shuffleBalls();
+}
+
+void GameField::SetUserData(UserData& userData)
+{
+
+}
+void GameField::SetResoultion(QSize& size)
+{
+    gameFieldSize = size;
+    areaGap = 25;
+    scoreRect = QRect(areaGap, areaGap, 150, 100);
+    extraBonusesRect = QRect(gameFieldSize.width() - 125 - areaGap, areaGap, 125, 400);
+    gameFieldRect = QRect(scoreRect.right() + (extraBonusesRect.left() - scoreRect.right()) / 2 - (fieldSize.width() * ballSize) / 2, areaGap, fieldSize.width() * ballSize, fieldSize.height() * ballSize);
+
+    logoSize = QSize(500, 150);
+    logoRect = QRect(QPoint(gameFieldSize.width() / 2 - logoSize.width() / 2, gameFieldSize.height() / 3 - logoSize.height() / 2), logoSize);
+    playButtonSize = QSize(240, 80);
+    playButtonRect = QRect(QPoint(gameFieldSize.width() / 2 - playButtonSize.width() / 2, gameFieldSize.height() * 2 / 3 - playButtonSize.height() / 2), playButtonSize);
+    setFixedSize(gameFieldSize);
 
     ebp1.maxValue = 10000;
     ebp1.rect = QRect(0, 0, 100, 100);
@@ -35,17 +53,12 @@ GameField::GameField(QWidget* parent)
     ebp3.maxValue = 20;
     ebp3.rect = QRect(0, 0, 100, 100);
     ebp3.pos = QPoint((extraBonusesRect.width() - ebp3.rect.width()) / 2, (extraBonusesRect.width() - ebp3.rect.width()) / 2 + ebp3.rect.height() * 2);
-
-    // debug
-    //balls[0][0].SetType(Ball::Ball6);
-    //balls[0][1].SetType(Ball::Ball6);
-    //balls[1][2].SetType(Ball::Ball6);
-    //balls[0][3].SetType(Ball::Ball6);
-    //balls[0][4].SetType(Ball::Ball6);
-
+}
+void GameField::LoadResources()
+{
+    // load backgrounds
     startScreenBackground = QImage(":/misc/Resources/background-start.bmp").scaled(gameFieldSize);
     gameFieldBackground = QImage(":/misc/Resources/background-1.bmp").scaled(gameFieldSize);
-
     // convert SVG rextures to QImage
     textures << SvgToImage(QString(":/caps/Resources/caps/01-saturn.svg"));
     textures << SvgToImage(QString(":/caps/Resources/caps/02-jupiter.svg"));
@@ -69,7 +82,6 @@ GameField::GameField(QWidget* parent)
     extraBonus2Textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2-right.svg"));
     extraBonus2Textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2-top.svg"));
     extraBonus2Textures << SvgToImage(QString(":/bonuses/Resources/bonuses/extra-2-bottom.svg"));
-
     selection = SvgToImage(QString(":/misc/Resources/select.svg"));
     // load sounds
     sounds << new QSound(":/sounds/Resources/sounds/remove-balls.wav");
@@ -77,7 +89,6 @@ GameField::GameField(QWidget* parent)
     sounds << new QSound(":/sounds/Resources/sounds/use-bonus-4.wav");
     sounds << new QSound(":/sounds/Resources/sounds/use-bonus-5.wav");
     sounds << new QSound(":/sounds/Resources/sounds/use-bonus-6.wav");
-
     // load music
     playlist.reset(new QMediaPlaylist());
     //playlist->addMedia(QUrl::fromLocalFile("Resources/playlist/menu_music.mp3"));
@@ -87,17 +98,14 @@ GameField::GameField(QWidget* parent)
     //playlist->shuffle();
     player.reset(new QMediaPlayer());
     player->setPlaylist(playlist.data());
-
+}
+void GameField::Start()
+{
     playlist->setCurrentIndex(Music::StartScreen);
     player->play();
     updateStartScreenTimer.setTimerType(Qt::TimerType::PreciseTimer);
     connect(&updateStartScreenTimer, &QTimer::timeout, this, &GameField::updateStartScreen);
     updateStartScreenTimer.start(1000 / fps);
-}
-
-void GameField::Test()
-{
-    shuffleBalls();
 }
 
 void GameField::mousePressEvent(QMouseEvent* e)

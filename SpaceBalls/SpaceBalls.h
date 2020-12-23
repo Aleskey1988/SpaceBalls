@@ -3,6 +3,7 @@
 #include <QtWidgets>
 #include <QtCore>
 #include "ui_SpaceBalls.h"
+#include "GameField.h"
 
 class SpaceBalls : public QMainWindow
 {
@@ -14,4 +15,5 @@ public:
 
 private:
     Ui::SpaceBallsClass ui;
+    GameField* gameField = nullptr;
 };

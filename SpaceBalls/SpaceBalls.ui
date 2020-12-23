@@ -14,48 +14,33 @@
    <string>SpaceBalls</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="GameField" name="gameField">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>1000</width>
-      <height>700</height>
-     </rect>
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <property name="spacing">
+     <number>0</number>
     </property>
-    <property name="frameShape">
-     <enum>QFrame::NoFrame</enum>
+    <property name="leftMargin">
+     <number>0</number>
     </property>
-    <property name="text">
-     <string/>
+    <property name="topMargin">
+     <number>0</number>
     </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+    <property name="rightMargin">
+     <number>0</number>
     </property>
-   </widget>
-   <widget class="QPushButton" name="buttonTest">
-    <property name="geometry">
-     <rect>
-      <x>920</x>
-      <y>670</y>
-      <width>75</width>
-      <height>23</height>
-     </rect>
+    <property name="bottomMargin">
+     <number>0</number>
     </property>
-    <property name="text">
-     <string>Test</string>
-    </property>
-   </widget>
+    <item>
+     <layout class="QVBoxLayout" name="layout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+     </layout>
+    </item>
+   </layout>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <customwidgets>
-  <customwidget>
-   <class>GameField</class>
-   <extends>QLabel</extends>
-   <header>gamefield.h</header>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="SpaceBalls.qrc"/>
  </resources>

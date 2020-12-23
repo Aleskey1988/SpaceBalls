@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>321</width>
-    <height>432</height>
+    <width>314</width>
+    <height>413</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Space Balls</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
    <item row="0" column="0">
@@ -24,7 +24,10 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QComboBox" name="comboBox_2">
+      <widget class="QComboBox" name="comboFPS">
+       <property name="currentIndex">
+        <number>2</number>
+       </property>
        <item>
         <property name="text">
          <string>120</string>
@@ -55,7 +58,10 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QComboBox" name="comboBox">
+      <widget class="QComboBox" name="comboResolution">
+       <property name="currentIndex">
+        <number>1</number>
+       </property>
        <item>
         <property name="text">
          <string>1920x1080 (16:9)</string>
@@ -81,7 +87,7 @@
      <item row="3" column="1">
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="1" column="1">
-        <widget class="QLabel" name="label_10">
+        <widget class="QLabel" name="labelMusicVolume">
          <property name="text">
           <string>75</string>
          </property>
@@ -91,7 +97,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QSlider" name="horizontalSlider_2">
+        <widget class="QSlider" name="sliderMusicVolume">
          <property name="maximum">
           <number>100</number>
          </property>
@@ -156,7 +162,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QSlider" name="horizontalSlider">
+        <widget class="QSlider" name="sliderSoundVolume">
          <property name="maximum">
           <number>100</number>
          </property>
@@ -169,7 +175,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLabel" name="label_9">
+        <widget class="QLabel" name="labelSoundVolume">
          <property name="text">
           <string>75</string>
          </property>
@@ -183,14 +189,14 @@
      <item row="4" column="0" colspan="2">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="buttonResetSettings">
          <property name="text">
           <string>Reset settings</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_2">
+        <widget class="QPushButton" name="buttonResetUserData">
          <property name="text">
           <string>Reset user data</string>
          </property>

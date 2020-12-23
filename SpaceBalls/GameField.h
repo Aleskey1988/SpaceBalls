@@ -12,11 +12,20 @@ class GameField : public QLabel
     Q_OBJECT
 
 public:
+    struct UserData
+    {
+
+    };
+
     GameField(QWidget *parent = Q_NULLPTR);
 
-    void Test();
-    void SetScore(int value) { score = value; }
-    int GetScore() { return score; }
+    void SetUserData(GameField::UserData& userData);
+    void SetResoultion(QSize& size);
+    void SetFPS(int value) { fps = value; }
+    void SetSoundVolume(int value) { soundVolume = value; }
+    void SetMusicVolume(int value) { musicVolume = value; }
+    void LoadResources();
+    void Start();
 
 protected:
     void mousePressEvent(QMouseEvent* e);
@@ -85,16 +94,16 @@ private:
     double ballGapPercent = 0.07;
     int ballGap = ballSize * ballGapPercent;
 
-    QSize gameFieldSize = QSize(1280, 720);
-    int areaGap = 25;
-    QRect scoreRect = QRect(areaGap, areaGap, 150, 100);
-    QRect extraBonusesRect = QRect(gameFieldSize.width() - 125 - areaGap, areaGap, 125, 400);
-    QRect gameFieldRect = QRect(scoreRect.right() + (extraBonusesRect.left() - scoreRect.right()) / 2 - (fieldSize.width() * ballSize) / 2, areaGap, fieldSize.width() * ballSize, fieldSize.height() * ballSize);
+    QSize gameFieldSize;
+    int areaGap;
+    QRect scoreRect;
+    QRect extraBonusesRect;
+    QRect gameFieldRect;
 
-    QSize logoSize = QSize(500, 150);
-    QRect logoRect = QRect(QPoint(gameFieldSize.width() / 2 - logoSize.width() / 2, gameFieldSize.height() / 3 - logoSize.height() / 2), logoSize);
-    QSize playButtonSize = QSize(240, 80);
-    QRect playButtonRect = QRect(QPoint(gameFieldSize.width() / 2 - playButtonSize.width() / 2, gameFieldSize.height() * 2 / 3 - playButtonSize.height() / 2), playButtonSize);
+    QSize logoSize;
+    QRect logoRect;
+    QSize playButtonSize;
+    QRect playButtonRect;
     double startScreenBackgroundOpacity = 1;
     double gameFieldBackgroundOpacity = 0;
     double logoAndPlayButtonOpacity = 1;
@@ -225,4 +234,7 @@ private:
         Level1,
         Level2,
     };
+
+    int soundVolume = 0;
+    int musicVolume = 0;
 };
