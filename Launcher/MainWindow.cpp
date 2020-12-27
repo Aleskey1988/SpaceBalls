@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
     {
         QSettings settings("settings.ini", QSettings::IniFormat);
         settings.beginGroup("userData");
-        settings.setValue("score", 0);
+        settings.setValue("level", 1);
     });
     connect(ui.buttonBox, &QDialogButtonBox::accepted, this, [=]
     {

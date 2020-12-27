@@ -6,28 +6,31 @@
 
 #include "ui_GameField.h"
 #include "Ball.h"
+#include "GameLevel.h"
 
 class GameField : public QLabel
 {
     Q_OBJECT
 
 public:
-    struct UserData
-    {
-
-    };
-
     GameField(QWidget *parent = Q_NULLPTR);
+    ~GameField();
 
-    void SetUserData(GameField::UserData& userData);
-    void SetResoultion(QSize& size);
+    void SetGameLevel(int value) { level.data = levels[value - 1]->data; }
+    int GetGameLevel() { return level.data.level; }
+
+    void SetResolution(QSize& size);
     void SetFPS(int value) { fps = value; }
     void SetSoundVolume(int value) { soundVolume = value; }
     void SetMusicVolume(int value) { musicVolume = value; }
     void LoadResources();
     void Start();
 
+signals:
+    void fpsChanged(double value);
+
 protected:
+    void paintEvent(QPaintEvent* e);
     void mousePressEvent(QMouseEvent* e);
     void mouseMoveEvent(QMouseEvent* e);
     void mouseReleaseEvent(QMouseEvent* e);
@@ -79,11 +82,12 @@ private:
     QList<QList<QPoint>> getLineShapes(QList<QList<QPoint>>& shapes);
     void removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType);
     QList<QPair<QPoint, QPoint>> getDropData();
-    QImage SvgToImage(QString& fileName);
+    QPixmap SvgToImage(QString& fileName);
     QList<PossibleMove> getPossibleMoves();
     void shuffleBalls();
     QPoint getRandomBallPos();
     void swapBalls(int x, int y);
+    void startNextLevel();
 
     Ui::GameField ui;
     QVector<QVector<Ball>> balls;
@@ -96,7 +100,8 @@ private:
 
     QSize gameFieldSize;
     int areaGap;
-    QRect scoreRect;
+    QRect levelRect;
+    QRect questRect;
     QRect extraBonusesRect;
     QRect gameFieldRect;
 
@@ -129,6 +134,10 @@ private:
 
     int fps = 60;
     int timerTick = 5;
+    QElapsedTimer fpsTimer;
+    QTimer updateFpsTimer;
+    int fpsElapsed = 0;
+    double realFps = 0;
 
     int swapCounter = 0;
     int removeCounter = 0;
@@ -138,17 +147,16 @@ private:
     int timerTwoCounter = 0;
     int timerThreeCounter = 0;
 
-    int score = 0;
     int prevScore = 0;
     bool isUseMouse = true;
 
-    QImage startScreenBackground;
-    QImage gameFieldBackground;
-    QList<QImage> textures;
-    QList<QImage> extraBonus1Textures;
-    QList<QImage> extraBonus2Textures;
+    QPixmap startScreenBackground;
+    QPixmap gameFieldBackground;
+    QList<QPixmap> textures;
+    QList<QPixmap> extraBonus1Textures;
+    QList<QPixmap> extraBonus2Textures;
     QList<QSound*> sounds;
-    QImage selection;
+    QPixmap selection;
 
     struct Bonus4
     {
@@ -237,4 +245,9 @@ private:
 
     int soundVolume = 0;
     int musicVolume = 0;
+
+    QList<GameLevel*> levels;
+    GameLevel level;
+
+    bool isStartNextLevel = false;
 };

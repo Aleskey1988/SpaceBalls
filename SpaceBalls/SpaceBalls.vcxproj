@@ -92,6 +92,7 @@
     <QtMoc Include="SpaceBalls.h" />
     <ClCompile Include="Ball.cpp" />
     <ClCompile Include="GameField.cpp" />
+    <ClCompile Include="GameLevel.cpp" />
     <ClCompile Include="SpaceBalls.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -100,6 +101,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ball.h" />
+    <QtMoc Include="GameLevel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
