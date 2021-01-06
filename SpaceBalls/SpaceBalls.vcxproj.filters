@@ -20,9 +20,6 @@
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <QtRcc Include="SpaceBalls.qrc" />
-  </ItemGroup>
-  <ItemGroup>
     <QtUic Include="GameField.ui" />
     <QtUic Include="SpaceBalls.ui" />
   </ItemGroup>

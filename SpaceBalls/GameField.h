@@ -28,6 +28,12 @@ public:
 
 signals:
     void fpsChanged(double value);
+    void disappearBallsAnimationPlayed();
+    void disappearGameFieldRectAnimationPlayed();
+    void disappearSideBarsAnimationPlayed();
+    void newBackgroundAnimationPlayed();
+    void appearSideBarsAnimationPlayed();
+    void appearGameFieldRectAnimationPlayed();
 
 protected:
     void paintEvent(QPaintEvent* e);
@@ -89,6 +95,14 @@ private:
     void swapBalls(int x, int y);
     void startNextLevel();
 
+    void playDisappearBallsAnimation();
+    void playDisappearGameFieldRectAnimation();
+    void playDisappearSideBarsAnimation();
+    void playNewBackgroundAnimation();
+    void playAppearSideBarsAnimation();
+    void playAppearGameFieldRectAnimation();
+    void playAppearBallsAnimation();
+
     Ui::GameField ui;
     QVector<QVector<Ball>> balls;
     QVector<QVector<ChainBall>> chainBalls;
@@ -99,11 +113,12 @@ private:
     int ballGap = ballSize * ballGapPercent;
 
     QSize gameFieldSize;
-    int areaGap;
+    int gap = 0;
     QRect levelRect;
     QRect questRect;
     QRect extraBonusesRect;
     QRect gameFieldRect;
+    int gameFieldWidthForAnimation = 0;
 
     QSize logoSize;
     QRect logoRect;
@@ -112,6 +127,7 @@ private:
     double startScreenBackgroundOpacity = 1;
     double gameFieldBackgroundOpacity = 0;
     double logoAndPlayButtonOpacity = 1;
+
     bool drawGameFieldRect = false;
     bool drawBalls = false;
 
@@ -131,6 +147,9 @@ private:
     QTimer timerOne;
     QTimer timerTwo;
     QTimer timerThree;
+    QTimer timerFour;
+
+    QTimer timer;
 
     int fps = 60;
     int timerTick = 5;
@@ -146,17 +165,20 @@ private:
     int timerOneCounter = 0;
     int timerTwoCounter = 0;
     int timerThreeCounter = 0;
+    int timerFourCounter = 0;
 
     int prevScore = 0;
     bool isUseMouse = true;
 
     QPixmap startScreenBackground;
-    QPixmap gameFieldBackground;
+    QPixmap currentBackground;
+    QList<QPixmap> gameFieldBackgrounds;
     QList<QPixmap> textures;
     QList<QPixmap> extraBonus1Textures;
     QList<QPixmap> extraBonus2Textures;
+    QPixmap selectionTexture;
+    QPixmap ballsTexture;
     QList<QSound*> sounds;
-    QPixmap selection;
 
     struct Bonus4
     {

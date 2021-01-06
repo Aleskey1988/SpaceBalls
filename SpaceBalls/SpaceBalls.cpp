@@ -17,7 +17,7 @@ SpaceBalls::SpaceBalls(QWidget *parent)
     settings.beginGroup("userData");
     int level = settings.value("level", 1).toInt();
 
-    gameField = new GameField;
+    gameField = new GameField(this);
     ui.layout->addWidget(gameField);
     gameField->SetGameLevel(level);
     // set resolution
@@ -36,9 +36,7 @@ SpaceBalls::SpaceBalls(QWidget *parent)
 }
 SpaceBalls::~SpaceBalls()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    settings.beginGroup("userData");
-    settings.setValue("level", gameField->GetGameLevel());
-
-    delete gameField;
+    //QSettings settings("settings.ini", QSettings::IniFormat);
+    //settings.beginGroup("userData");
+    //settings.setValue("level", gameField->GetGameLevel());
 }

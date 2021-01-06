@@ -36,7 +36,7 @@ public:
     void SetSelected(bool flag) { isSelected = flag; }
     bool GetSelected() { return isSelected; }
 
-    static int GetBallNumber() { return 6; }
+    static int GetBallNumber() { return 4; }
 
     bool IsBall();
 

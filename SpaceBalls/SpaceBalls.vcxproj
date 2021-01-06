@@ -86,7 +86,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <QtRcc Include="SpaceBalls.qrc" />
     <QtUic Include="GameField.ui" />
     <QtUic Include="SpaceBalls.ui" />
     <QtMoc Include="SpaceBalls.h" />
