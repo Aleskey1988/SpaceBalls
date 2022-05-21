@@ -28,8 +28,8 @@ class GameLevel : public QObject
 
 public:
     GameLevel() {}
-    GameLevel(int level, QuestType questType, int score);
-    GameLevel(int level, QuestType questType, int ballCounter, Ball::Type type);
+    GameLevel(QuestType questType, int score);
+    GameLevel(QuestType questType, int ballCounter, Ball::Type type);
 
     bool IsScoreQuest() { return data.questType == QuestType::Score; }
     bool IsBallCounterQuest() { return data.questType == QuestType::BallCounter; }
@@ -41,4 +41,7 @@ public:
 
 signals:
     void questFinished();
+
+private:
+    static int levelCounter;
 };

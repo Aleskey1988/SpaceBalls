@@ -19,7 +19,7 @@ public:
     void SetGameLevel(int value) { level.data = levels[value - 1]->data; }
     int GetGameLevel() { return level.data.level; }
 
-    void SetResolution(QSize& size);
+    void SetResolution(const QSize& size);
     void SetFPS(int value) { fps = value; }
     void SetSoundVolume(int value) { soundVolume = value; }
     void SetMusicVolume(int value) { musicVolume = value; }
@@ -85,10 +85,10 @@ private:
     void updateGameField();
     QList<QPoint> getShape(int x, int y);
     QList<QList<QPoint>> getShapes(QVector<QVector<Ball>>& balls);
-    QList<QList<QPoint>> getLineShapes(QList<QList<QPoint>>& shapes);
-    void removeBalls(QList<QList<QPoint>>& shapes, RemoveType removeType);
+    QList<QList<QPoint>> getLineShapes(const QList<QList<QPoint>>& shapes);
+    void removeBalls(const QList<QList<QPoint>>& shapes, RemoveType removeType);
     QList<QPair<QPoint, QPoint>> getDropData();
-    QPixmap SvgToImage(QString& fileName);
+    QPixmap SvgToImage(const QString& fileName);
     QList<PossibleMove> getPossibleMoves();
     void shuffleBalls();
     QPoint getRandomBallPos();
@@ -102,6 +102,7 @@ private:
     void playAppearSideBarsAnimation();
     void playAppearGameFieldRectAnimation();
     void playAppearBallsAnimation();
+    void runGameFieldUpdating();
 
     Ui::GameField ui;
     QVector<QVector<Ball>> balls;
@@ -113,19 +114,18 @@ private:
     int ballGap = ballSize * ballGapPercent;
 
     QSize gameFieldSize;
-    int gap = 0;
+    int gap = 25;
     QRect levelRect;
     QRect questRect;
     QRect extraBonusesRect;
     QRect gameFieldRect;
-    int gameFieldWidthForAnimation = 0;
+    int gameFieldRectAnimation = 0;
+    int numFramesSideBarsAnimation = 180;
 
     QSize logoSize;
     QRect logoRect;
     QSize playButtonSize;
     QRect playButtonRect;
-    double startScreenBackgroundOpacity = 1;
-    double gameFieldBackgroundOpacity = 0;
     double logoAndPlayButtonOpacity = 1;
 
     bool drawGameFieldRect = false;
@@ -152,7 +152,8 @@ private:
     QTimer timer;
 
     int fps = 60;
-    int timerTick = 5;
+    int gameSpeed = 5;
+    int animationSpeed = 8;
     QElapsedTimer fpsTimer;
     QTimer updateFpsTimer;
     int fpsElapsed = 0;
@@ -169,9 +170,12 @@ private:
 
     int prevScore = 0;
     bool isUseMouse = true;
+    bool isFirstNewBackgroundAnimation = true;
+    bool firstTimeBallsAnimation = true;
 
-    QPixmap startScreenBackground;
     QPixmap currentBackground;
+    QPixmap nextBackground;
+    QPixmap startScreenBackground;
     QList<QPixmap> gameFieldBackgrounds;
     QList<QPixmap> textures;
     QList<QPixmap> extraBonus1Textures;
@@ -179,6 +183,9 @@ private:
     QPixmap selectionTexture;
     QPixmap ballsTexture;
     QList<QSound*> sounds;
+
+    QPixmap firstPixmap;
+    QPixmap secondPixmap;
 
     struct Bonus4
     {

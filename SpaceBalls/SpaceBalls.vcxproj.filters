@@ -20,8 +20,10 @@
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <QtUic Include="GameField.ui" />
     <QtUic Include="SpaceBalls.ui" />
+    <QtUic Include="GameField.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -32,6 +34,11 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+      <ParseFiles>true</ParseFiles>
+    </Filter>
+    <Filter Include="Form Files">
+      <UniqueIdentifier>{99349809-55BA-4b9d-BF79-8FDBB0286EB3}</UniqueIdentifier>
+      <Extensions>ui</Extensions>
       <ParseFiles>true</ParseFiles>
     </Filter>
   </ItemGroup>

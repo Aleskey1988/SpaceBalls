@@ -1,14 +1,16 @@
 #include "GameLevel.h"
 
-GameLevel::GameLevel(int level, QuestType questType, int score)
+int GameLevel::levelCounter = 1;
+
+GameLevel::GameLevel(QuestType questType, int score)
 {
-    data.level = level;
+    data.level = levelCounter++;
     data.questType = questType;
     data.scoreMax = score;
 }
-GameLevel::GameLevel(int level, QuestType questType, int ballCounter, Ball::Type type)
+GameLevel::GameLevel(QuestType questType, int ballCounter, Ball::Type type)
 {
-    data.level = level;
+    data.level = levelCounter++;
     data.questType = questType;
     data.ballCounterMax = ballCounter;
     data.ballType = type;
