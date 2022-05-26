@@ -1081,7 +1081,7 @@ void GameField::updateGameField()
         p.setBrush(QColor(0, 0, 255, 32));
         p.drawRect(notCompletedRect);
         p.setPen(Qt::white);
-        p.drawText(rectText, Qt::AlignCenter, text);
+        p.drawText(rectText, Qt::AlignCenter, text); 
     }
     p.translate(-questRect.topLeft());
 
