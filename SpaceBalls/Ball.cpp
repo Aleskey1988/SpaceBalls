@@ -7,7 +7,7 @@ Ball::Ball()
 bool Ball::IsBall()
 {
     bool flag = false;
-    for (int i = Cap1; i <= Cap6; i++)
+    for (int i = Ball1; i <= Ball6; i++)
     {
         if (type == i)
             return true;

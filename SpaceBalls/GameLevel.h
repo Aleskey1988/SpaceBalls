@@ -8,17 +8,54 @@ enum QuestType
 {
     Default,
     Score,          // count score
-    BallCounter,    // count number of balls of certain type
+    Balls,          // count number of balls of certain type
 };
 
-struct GameLevelData
+class Quest
 {
-    int level = 0;
-    QuestType questType = QuestType::Default;
+public:
+    Quest(const QuestType questType, const int scoreMax)
+        : questType(questType), scoreMax(scoreMax)
+    {
+    }
+    virtual ~Quest() = 0 {};
+
+    bool IsScoreQuest() const { return questType == QuestType::Score; }
+    bool IsBallsQuest() const { return questType == QuestType::Balls; }
+
+    int GetScore() const { return score; };
+    int GetScoreMax() const { return scoreMax; };
+
+    void UpdateScore(const int value) { score += value; if (score > scoreMax) score = scoreMax; };
+
+protected:
+    QuestType questType;
     int score = 0;
     int scoreMax = 0;
-    int ballCounter = 0;
-    int ballCounterMax = 0;
+};
+
+class ScoreQuest : public Quest
+{
+public:
+    ScoreQuest(const int scoreMax)
+        : Quest(QuestType::Score, scoreMax)
+    {
+    }
+    virtual ~ScoreQuest() {}
+};
+
+class BallsQuest : public Quest
+{
+public:
+    BallsQuest(const Ball::Type ballType, const int scoreMax)
+        : Quest(QuestType::Balls, scoreMax), ballType(ballType)
+    {
+    }
+    virtual ~BallsQuest() {}
+
+    Ball::Type GetBallType() const { return ballType; }
+
+private:
     Ball::Type ballType;
 };
 
@@ -27,21 +64,27 @@ class GameLevel : public QObject
     Q_OBJECT
 
 public:
-    GameLevel() {}
-    GameLevel(QuestType questType, int score);
-    GameLevel(QuestType questType, int ballCounter, Ball::Type type);
+    GameLevel();
+    ~GameLevel();
 
-    bool IsScoreQuest() { return data.questType == QuestType::Score; }
-    bool IsBallCounterQuest() { return data.questType == QuestType::BallCounter; }
+    int GetLevelNumber() const { return levelNumber; }
+    void AddScore(const int value) { score += value; };
+    int GetScore() const { return score; }
 
-    void UpdateScoreCounter();
-    void UpdateBallCounter(Ball::Type type);
-
-    GameLevelData data;
+    GameLevel* AddScoreQuest(const int score);
+    GameLevel* AddBallsQuest(const Ball::Type ballType, const int ballCounter);
+    QList<Quest*> GetQuests() const { return quests; }
+    void UpdateQuestData(const int score, const QVector<int>& ballsCounter);
 
 signals:
     void questFinished();
 
 private:
+    void checkFinished();
+
     static int levelCounter;
+    int levelNumber = 0;
+    QList<Quest*> quests;
+    int score = 0;
+
 };

@@ -7,19 +7,19 @@ class Ball
 public:
     enum Type
     {
-        Cap1,
-        Cap2,
-        Cap3,
-        Cap4,
-        Cap5,
-        Cap6,
-        Empty,
+        Ball1,
+        //Ball2,
+        Ball3,
+        Ball4,
+        Ball5,
+        Ball6,
         Bonus4,
         Bonus5,
         Bonus6,
         ExtraBonus1,    // meteors
         ExtraBonus2,    // rockets
         ExtraBonus3,    // constellation
+        Empty,
     };
 
     Ball();
@@ -36,7 +36,7 @@ public:
     void SetSelected(bool flag) { isSelected = flag; }
     bool GetSelected() { return isSelected; }
 
-    static int GetBallNumber() { return 4; }
+    static int GetBallNumber() { return 5; }
 
     bool IsBall();
 

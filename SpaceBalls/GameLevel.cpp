@@ -2,31 +2,54 @@
 
 int GameLevel::levelCounter = 1;
 
-GameLevel::GameLevel(QuestType questType, int score)
+GameLevel::GameLevel()
 {
-    data.level = levelCounter++;
-    data.questType = questType;
-    data.scoreMax = score;
+    levelNumber = levelCounter++;
 }
-GameLevel::GameLevel(QuestType questType, int ballCounter, Ball::Type type)
+GameLevel::~GameLevel()
 {
-    data.level = levelCounter++;
-    data.questType = questType;
-    data.ballCounterMax = ballCounter;
-    data.ballType = type;
+    for (auto quest : quests)
+        delete quest;
 }
 
-void GameLevel::UpdateScoreCounter()
+GameLevel* GameLevel::AddScoreQuest(const int score)
 {
-    if (data.score >= data.scoreMax)
-        emit questFinished();
+    auto quest = new ScoreQuest(score);
+    quests << quest;
+    return this;
 }
-void GameLevel::UpdateBallCounter(Ball::Type type)
+GameLevel* GameLevel::AddBallsQuest(const Ball::Type ballType, const int score)
 {
-    if (data.ballType == type)
+    auto quest = new BallsQuest(ballType, score);
+    quests << quest;
+    return this;
+}
+void GameLevel::UpdateQuestData(const int score, const QVector<int>& ballsCounter)
+{
+    for (auto& quest : quests)
     {
-        ++data.ballCounter;
-        if (data.ballCounter >= data.ballCounterMax)
-            emit questFinished();
+        if (quest->IsScoreQuest())
+            quest->UpdateScore(score);
+        else if (quest->IsBallsQuest())
+        {
+            for (int i = 0; i < ballsCounter.size(); ++i)
+            {
+                if (quest->IsBallsQuest() && dynamic_cast<BallsQuest*>(quest)->GetBallType() == Ball::Type(i))
+                    quest->UpdateScore(ballsCounter[i]);
+            }
+        }
     }
+    checkFinished();
+}
+
+void GameLevel::checkFinished()
+{
+    int finishedCounter = 0;
+    for (auto& quest : quests)
+    {
+        if (quest->GetScore() >= quest->GetScoreMax())
+            ++finishedCounter;
+    }
+    if (finishedCounter == quests.size())
+        emit questFinished();
 }

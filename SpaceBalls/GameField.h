@@ -16,9 +16,7 @@ public:
     GameField(QWidget *parent = Q_NULLPTR);
     ~GameField();
 
-    void SetGameLevel(int value) { level.data = levels[value - 1]->data; }
-    int GetGameLevel() { return level.data.level; }
-
+    void SetGameLevel(int value);
     void SetResolution(const QSize& size);
     void SetFPS(int value) { fps = value; }
     void SetSoundVolume(int value) { soundVolume = value; }
@@ -88,7 +86,7 @@ private:
     QList<QList<QPoint>> getLineShapes(const QList<QList<QPoint>>& shapes);
     void removeBalls(const QList<QList<QPoint>>& shapes, RemoveType removeType);
     QList<QPair<QPoint, QPoint>> getDropData();
-    QPixmap SvgToImage(const QString& fileName);
+    QPixmap SvgToImage(const QString& fileName, const int size, const int gap);
     QList<PossibleMove> getPossibleMoves();
     void shuffleBalls();
     QPoint getRandomBallPos();
@@ -110,13 +108,15 @@ private:
 
     QSize fieldSize = QSize(9, 9);
     int ballSize = 61;
-    double ballGapPercent = 0.07;
-    int ballGap = ballSize * ballGapPercent;
+    int ballGap = ballSize * 0.07;
 
     QSize gameFieldSize;
     int gap = 25;
     QRect levelRect;
     QRect questRect;
+    const int leftPanelWidth = 200;
+    const int questRectLineHeight = 50;
+    const int textGap = questRectLineHeight * 0.15;
     QRect extraBonusesRect;
     QRect gameFieldRect;
     int gameFieldRectAnimation = 0;
@@ -152,8 +152,8 @@ private:
     QTimer timer;
 
     int fps = 60;
-    int gameSpeed = 5;
-    int animationSpeed = 8;
+    int gameSpeed = 6;
+    int animationSpeed = 10;
     QElapsedTimer fpsTimer;
     QTimer updateFpsTimer;
     int fpsElapsed = 0;
@@ -177,11 +177,15 @@ private:
     QPixmap nextBackground;
     QPixmap startScreenBackground;
     QList<QPixmap> gameFieldBackgrounds;
+    QList<QString> texturesPaths;
     QList<QPixmap> textures;
+    QList<QPixmap> texturesQuests;
     QList<QPixmap> extraBonus1Textures;
     QList<QPixmap> extraBonus2Textures;
     QPixmap selectionTexture;
+    QString ballsTexturePath;
     QPixmap ballsTexture;
+    QPixmap ballsTextureQuests;
     QList<QSound*> sounds;
 
     QPixmap firstPixmap;
@@ -276,7 +280,7 @@ private:
     int musicVolume = 0;
 
     QList<GameLevel*> levels;
-    GameLevel level;
+    GameLevel* level = nullptr;
 
     bool isStartNextLevel = false;
 };
