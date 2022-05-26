@@ -1048,7 +1048,7 @@ void GameField::updateGameField()
     p.drawRect(questRect);
     p.translate(questRect.topLeft());
     p.setFont(QFont("Arial", questRectLineHeight / 2));
-    p.setPen(QPen(Qt::white));
+    p.setPen(Qt::white);
     // draw label
     const QRect questLabelRect(0, 0, questRect.width(), questRectLineHeight);
     p.drawText(questLabelRect, Qt::AlignCenter, "Quests");
@@ -1057,7 +1057,12 @@ void GameField::updateGameField()
     {
         const QRect rectIcon(0, i * questRectLineHeight + questRectLineHeight, questRectLineHeight, questRectLineHeight);
         const QRect rectText(questRectLineHeight + textGap, i * questRectLineHeight + questRectLineHeight, questRect.width() - questRectLineHeight - textGap, questRectLineHeight);
-        const auto text = QString("%1/%2").arg(quests[i]->GetScore()).arg(quests[i]->GetScoreMax());
+        const auto score = quests[i]->GetScore();
+        const auto scoreMax = quests[i]->GetScoreMax();
+        const auto completed = (double)score / scoreMax * (rectText.width() - framePen.width() / 2);
+        const QRect completedRect(rectText.topLeft(), QSize(completed, rectText.height() - framePen.width() / 2));
+        const QRect notCompletedRect(completedRect.topRight(), QSize(rectText.width() - completed , rectText.height() - framePen.width() / 2));
+        const auto text = QString("%1/%2").arg(score).arg(scoreMax);
         QPixmap icon;
         if (quests[i]->IsScoreQuest())
         {
@@ -1070,7 +1075,13 @@ void GameField::updateGameField()
             icon = texturesQuests[ballType];
         }
         p.drawPixmap(rectIcon, icon);
-        p.drawText(rectText, Qt::AlignLeft | Qt::AlignVCenter, text);
+        p.setBrush(QColor(0, 0, 255, 96));
+        p.setPen(Qt::transparent);
+        p.drawRect(completedRect);
+        p.setBrush(QColor(0, 0, 255, 32));
+        p.drawRect(notCompletedRect);
+        p.setPen(Qt::white);
+        p.drawText(rectText, Qt::AlignCenter, text);
     }
     p.translate(-questRect.topLeft());
 
